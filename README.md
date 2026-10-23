@@ -2,7 +2,7 @@
 
 > Windows 上的**可解释、可回滚、不碰内核**的系统资源调度器 —— 场景化电源/核心调度，而不是"一键加速"的蛇油。
 
-[English summary](#english) · [安全承诺](#安全承诺我们不做的事) · [构建](#从源码构建) · [架构](docs/ARCHITECTURE.md) · [安全设计](docs/SAFETY.md)
+[English summary](#english) · [安全承诺](#安全承诺我们不做的事) · [构建](#从源码构建) · [分层架构图](docs/LAYERS.md) · [架构](docs/ARCHITECTURE.md) · [安全设计](docs/SAFETY.md)
 
 ---
 
