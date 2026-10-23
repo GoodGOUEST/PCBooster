@@ -1,0 +1,33 @@
+# ── 构建产物 ──
+bin/
+obj/
+out/
+
+# ── VS / Rider / VS Code ──
+.vs/
+.idea/
+.vscode/
+*.user
+*.suo
+
+# ── 审计 / 探针中间文件 ──
+cs_parse.json
+audit_report.txt
+*.log
+
+# ── 本地配置与学习数据（含个人信息，绝不入库）──
+config.ini
+learning_data.json
+rules.json
+usergames.json
+games.json
+
+# ── 发布产物请用 GitHub Releases，不要入库 ──
+*.exe
+
+# ── 与本项目无关的第三方安装包 & 临时文件 ──
+AMD_Chipset_Software_*.exe
+FanControl_*_Installer.exe
+HPC02PRO-*.exe
+*.bak
+t_out.txt

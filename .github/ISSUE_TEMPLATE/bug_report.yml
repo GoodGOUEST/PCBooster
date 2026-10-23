@@ -1,0 +1,87 @@
+name: Bug 报告
+description: 报告可复现的问题（崩溃、卡顿、掉帧、状态没还原等）
+title: "[bug] "
+labels: ["bug", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感谢反馈。请尽量完整填写 —— 这个项目会改系统状态，缺信息很难定位。
+
+        ⚠️ **贴日志前请先删掉个人信息**（用户名、机器名、序列号、游戏账号路径等）。
+        日志位置：`%AppData%\PCBooster\logs\booster_YYYYMMDD.log`
+
+  - type: input
+    id: version
+    attributes:
+      label: PC Booster 版本
+      description: 托盘右键→关于，或 exe 文件属性里的版本号
+      placeholder: "3.6.9"
+    validations:
+      required: true
+
+  - type: input
+    id: os
+    attributes:
+      label: Windows 版本
+      placeholder: "Windows 11 23H2 (22631.xxxx) / Windows 10 22H2 (19045.xxxx)"
+    validations:
+      required: true
+
+  - type: input
+    id: cpu
+    attributes:
+      label: CPU / 内存
+      placeholder: "i7-12700K / 32GB，或 R9 7950X3D / 64GB"
+    validations:
+      required: false
+
+  - type: dropdown
+    id: elevated
+    attributes:
+      label: 是否以管理员身份运行
+      options:
+        - "是"
+        - "否"
+        - "不确定"
+    validations:
+      required: true
+
+  - type: textarea
+    id: what
+    attributes:
+      label: 问题现象
+      description: 发生了什么？在什么场景下（进游戏 / 切窗口 / 待机唤醒 / 编译中 …）？
+      placeholder: |
+        进游戏 5 分钟后画面卡住黑屏约 10 秒，随后恢复。
+        场景：全屏 + 独占，Alt-Tab 频繁。
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: 期望行为
+    validations:
+      required: false
+
+  - type: textarea
+    id: log
+    attributes:
+      label: 相关日志（已删除个人信息）
+      description: 优先粘贴出错时间点前后 50 行；有关键字可先筛：`心跳中断`、`频率恢复自动`、`Job 施加失败`、`ERROR`
+      render: text
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: 自查
+      options:
+        - label: 我已确认日志里没有个人隐私信息
+          required: true
+        - label: 我使用的是 Release 版本，而不是自己改过的构建
+          required: false
+        - label: 这个问题在退出 PC Booster 后不再出现（有助于定位为调度相关）
+          required: false

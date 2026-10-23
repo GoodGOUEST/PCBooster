@@ -1,0 +1,53 @@
+name: 功能建议
+description: 提出新功能或调度策略改进
+title: "[feat] "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        提建议前请先看 [docs/ROADMAP.md](https://github.com/) 与 README 里的「安全承诺：我们不做的事」。
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: 你想解决的问题
+      description: 描述场景与痛点，而不是先给方案
+      placeholder: |
+        我在 HDD 上玩大型游戏，进新场景时贴图加载慢。
+        希望工具能识别"正在加载地图"并临时提高该进程的 I/O 优先级。
+    validations:
+      required: true
+
+  - type: textarea
+    id: idea
+    attributes:
+      label: 你设想的做法（可选）
+    validations:
+      required: false
+
+  - type: dropdown
+    id: layer
+    attributes:
+      label: 涉及层
+      options:
+        - "不确定"
+        - "Infrastructure（拓扑/原生 API/配置）"
+        - "Execution（电源/内存/Job/规则/预加载）"
+        - "Core（调度协调/降级/决策）"
+        - "Intelligence（场景/分类/预测）"
+        - "UI"
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: redline
+    attributes:
+      label: 红线确认
+      options:
+        - label: 该建议不涉及进程注入 / 内核驱动 / 图形 API hooking
+          required: true
+        - label: 该建议不涉及对反作弊进程的任何写操作
+          required: true
+        - label: 该建议带来的系统改动可以在退出时完整还原
+          required: true

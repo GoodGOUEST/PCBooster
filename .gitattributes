@@ -1,0 +1,10 @@
+# 统一换行符：仓库与工作区都用 LF。
+# 本项目源码是 UTF-8 无 BOM + LF，强制 CRLF 只会产生无意义 diff 和成片警告。
+* text=auto eol=lf
+
+# 二进制
+*.exe   binary
+*.png   binary
+*.ico   binary
+*.dll   binary
+*.sys   binary
