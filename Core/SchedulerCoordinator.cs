@@ -213,8 +213,10 @@ private static int _lastRuleVersion;
         {
             var context = CollectContext();
             var (healthy, total) = ModuleHealthMonitor.GetHealthSummary();
+            var evaluatedLevel = SchedulerDegradationEngine.Evaluate(context, healthy, total);
             // 降级加滞回——恶化立即生效，恢复需连续 3 次（约 30s）稳定
-            _level = StabilizeLevel(SchedulerDegradationEngine.Evaluate(context, healthy, total));
+            _level = StabilizeLevel(evaluatedLevel,
+                DescribeLevelReason(context, healthy, total, evaluatedLevel));
             var tasks = new List<Task> { Task.Run(() => PowerSaver.CheckWakeConditions()) };
             PreloadProtection.CheckExpired();
             // 探测编译工具链 / 办公与浏览器前台，刷新“免限速免修剪”窗口
@@ -266,21 +268,39 @@ private static int _lastRuleVersion;
     /// <summary>降级等级滞回——恶化立即生效，恢复需连续 3 次（约 30s）稳定，
     /// 避免预测/置信度边界抖动导致降级等级每 10 秒来回跳。</summary>
     private static SchedulerDegradationEngine.ScheduleLevel StabilizeLevel(
-        SchedulerDegradationEngine.ScheduleLevel evaluated)
+        SchedulerDegradationEngine.ScheduleLevel evaluated, string reason = "")
     {
+        string why = string.IsNullOrEmpty(reason) ? "" : $"（{reason}）";
         if (evaluated == _level) { _pendingLevelCount = 0; return _level; }
         if ((int)evaluated > (int)_level)   // 更差：立即生效
         {
             _pendingLevelCount = 0;
-            AppLogger.Info($"🩺 降级: {_level} → {evaluated}");
+            AppLogger.Info($"🩺 降级: {_level} → {evaluated}{why}");
             return evaluated;
         }
         if (evaluated == _pendingLevel) _pendingLevelCount++;
         else { _pendingLevel = evaluated; _pendingLevelCount = 1; }
         if (_pendingLevelCount < 3) return _level;
-        AppLogger.Info($"🩺 恢复: {_level} → {evaluated}");
+        AppLogger.Info($"🩺 恢复: {_level} → {evaluated}{why}");
         _pendingLevelCount = 0;
         return evaluated;
+    }
+
+    /// <summary>降级原因的可读描述——日志里直接看出“为什么降”，而不只是一个 Degraded。</summary>
+    private static string DescribeLevelReason(SchedulerContext context, int healthy, int total,
+        SchedulerDegradationEngine.ScheduleLevel level)
+    {
+        switch (level)
+        {
+            case SchedulerDegradationEngine.ScheduleLevel.Minimal:
+                return $"数据置信度 {context.DataConfidence:P0} 低于 {Constants.DEGRADE_MIN_CONFIDENCE:P0}";
+            case SchedulerDegradationEngine.ScheduleLevel.Safe:
+                return $"模块健康 {healthy}/{total}";
+            case SchedulerDegradationEngine.ScheduleLevel.Degraded:
+                return "暂无高置信度预测";
+            default:
+                return "预测与模块均充足";
+        }
     }
 
     private static bool ShouldRun(string decision,

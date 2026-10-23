@@ -61,7 +61,11 @@ namespace PCBooster.Core
                 failures = r.ConsecutiveFailures;   // 原来硬编码传 0
             }
             if (old != now)
+            {
+                // 可归因：降级时能直接看出是哪个模块失败了多少次
+                AppLogger.Info($"🩺 模块 {module}: {old ?? "Normal"} → {now}（连续失败 {failures} 次）");
                 EventBus.Publish(new ModuleHealthChangedEvent(module, now, failures, DateTime.Now, EventBus.NextSeq()));
+            }
         }
 
         public static bool IsAvailable(string module)

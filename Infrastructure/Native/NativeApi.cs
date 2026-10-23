@@ -270,6 +270,10 @@ public static class NativeApi
     private static readonly Dictionary<Guid, int> _parkingWritten = new();
     private static string _lastGamingProfile = "";
     private static bool _settingsDirty;
+    // 当前活动方案是否已确认“不提供核心停泊设置”（HRESULT 0x2 = ERROR_FILE_NOT_FOUND）。
+    // 实测部分方案/精简系统里 SUB_PROCESSOR·CPMINCORES 根本不存在，
+    // 之前每次都当失败处理 → 模块健康一直是 Degraded。
+    private static Guid _parkingUnsupportedScheme = Guid.Empty;
     public static void SetCoreParkingPercent(int percent)
     {
         if (RuntimeInformation.ProcessArchitecture == Architecture.Arm64) return;
@@ -285,8 +289,16 @@ public static class NativeApi
             // 每次重激活都会把 CPU 电源状态与 DXGI 提交节奏打断一下，
             // 活动画面上就是一闪/一黑。待命↔活跃/载入阶段来回切正是这个路径。
             if (_parkingWritten.TryGetValue(active, out var written) && written == target) return;
+            if (_parkingUnsupportedScheme == active) return;   // 该方案没有停泊项，直接跳过
             var s = active; var sub = GUID_SUB_PROCESS; var set = GUID_PARKING_MIN;
             uint rc = PowerWriteACValueIndex(IntPtr.Zero, ref s, ref sub, ref set, (uint)target);
+            if (rc == 2)
+            {
+                // ERROR_FILE_NOT_FOUND：当前方案不含该设置项（不是缺陷，也不应计为模块故障）
+                _parkingUnsupportedScheme = active;
+                AppLogger.DebugRateLimited($"核心停泊：方案 {active} 不提供 CPMINCORES 设置，已跳过（不影响其他优化）");
+                return;
+            }
             if (rc != 0) { WarnPowerOnceLocked($"核心停泊写入失败 HRESULT=0x{rc:X8}"); return; }
             _parkingWritten[active] = target;
             _settingsDirty = true;
@@ -506,7 +518,7 @@ public static class NativeApi
     {
         if (_powerWarned) return;
         _powerWarned = true;
-        AppLogger.Warning($"🔌 {message}（多为权限不足，后续同类失败不再提示）");
+        AppLogger.Warning($"🔌 {message}（后续同类失败不再提示）");
     }
     public static bool PreloadProcess(int pid)
     {
