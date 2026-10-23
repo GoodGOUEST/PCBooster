@@ -39,8 +39,8 @@ namespace PCBooster
                     Verb = "runas",
                     WorkingDirectory = System.IO.Path.GetDirectoryName(exe) ?? Environment.CurrentDirectory
                 };
-                try { _mutex?.ReleaseMutex(); } catch (System.Exception ex) { PCBooster.Infrastructure.Common.AppLogger.Debug("忽略异常: " + ex.GetType().Name + ": " + ex.Message); }
-                try { _mutex?.Dispose(); } catch (System.Exception ex) { PCBooster.Infrastructure.Common.AppLogger.Debug("忽略异常: " + ex.GetType().Name + ": " + ex.Message); }
+                try { _mutex?.ReleaseMutex(); } catch (System.Exception ex) { PCBooster.Infrastructure.Common.AppLogger.DebugRateLimited("忽略异常: " + ex.GetType().Name + ": " + ex.Message); }
+                try { _mutex?.Dispose(); } catch (System.Exception ex) { PCBooster.Infrastructure.Common.AppLogger.DebugRateLimited("忽略异常: " + ex.GetType().Name + ": " + ex.Message); }
                 _mutex = null;
                 System.Diagnostics.Process.Start(psi);
                 return true;
@@ -91,7 +91,7 @@ namespace PCBooster
                             System.IO.Path.Combine(AppPaths.LogDir, "crash.log"),
                             $"[{DateTime.Now}] {e.ExceptionObject}\n");
                     }
-                    catch (System.Exception ex) { PCBooster.Infrastructure.Common.AppLogger.Debug("忽略异常: " + ex.GetType().Name + ": " + ex.Message); }
+                    catch (System.Exception ex) { PCBooster.Infrastructure.Common.AppLogger.DebugRateLimited("忽略异常: " + ex.GetType().Name + ": " + ex.Message); }
                 };
                 // CS0103修复: 全限定 TaskScheduler
                 System.Threading.Tasks.TaskScheduler.UnobservedTaskException += (s, e) =>
@@ -144,7 +144,7 @@ namespace PCBooster
                         AppLogger.Error("未处理异常，先还原所有优化: " + e.ExceptionObject);
                         Core.BoosterActions.RestoreAll();
                     }
-                    catch (System.Exception ex) { PCBooster.Infrastructure.Common.AppLogger.Debug("忽略异常: " + ex.GetType().Name + ": " + ex.Message); }
+                    catch (System.Exception ex) { PCBooster.Infrastructure.Common.AppLogger.DebugRateLimited("忽略异常: " + ex.GetType().Name + ": " + ex.Message); }
                 };
                 // UI 不直接引用 Program：提权重启由宿主注入
                 UI.AppServices.RestartElevated = RestartElevated;
@@ -230,7 +230,7 @@ namespace PCBooster
                             if (!_activateEvent.WaitOne(2000)) continue;
                             onActivate?.Invoke();
                         }
-                        catch (System.Exception ex) { PCBooster.Infrastructure.Common.AppLogger.Debug("忽略异常: " + ex.GetType().Name + ": " + ex.Message); }
+                        catch (System.Exception ex) { PCBooster.Infrastructure.Common.AppLogger.DebugRateLimited("忽略异常: " + ex.GetType().Name + ": " + ex.Message); }
                     }
                 })
                 {

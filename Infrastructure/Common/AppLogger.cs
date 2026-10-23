@@ -36,6 +36,25 @@ namespace PCBooster.Infrastructure.Common
         }
 
         public static void Debug(string message) => Enqueue("DEBUG", message);
+
+        // 生产限流：同一条 DEBUG 在 60 秒内只写一次。
+        // 典型场景：对受保护/已退出进程查信息必然抛异常，逐次记录会把日志刷爆。
+        private static readonly Dictionary<string, DateTime> _debugLastWrite = new(StringComparer.Ordinal);
+        private static readonly object _debugThrottleLock = new();
+
+        /// <summary>同一条消息在 60 秒内只记录一次（用于可预期的、高频的异常）</summary>
+        public static void DebugRateLimited(string message)
+        {
+            var now = DateTime.Now;
+            lock (_debugThrottleLock)
+            {
+                if (_debugLastWrite.TryGetValue(message, out var last) && (now - last).TotalSeconds < 60) return;
+                if (_debugLastWrite.Count > 256) _debugLastWrite.Clear();
+                _debugLastWrite[message] = now;
+            }
+            Enqueue("DEBUG", message);
+        }
+
         public static void Info(string message) => Enqueue("INFO", message);
         public static void Warning(string message) => Enqueue("WARN", message);
 

@@ -300,11 +300,11 @@ public static class InstructionSetOptimizer
                     var n = p.ProcessName.ToLowerInvariant();
                     if (_rivalHints.Any(h => n.Contains(h))) { _rivalName = p.ProcessName; break; }
                 }
-                catch (System.Exception ex) { PCBooster.Infrastructure.Common.AppLogger.Debug("忽略异常: " + ex.GetType().Name + ": " + ex.Message); }
+                catch (System.Exception ex) { PCBooster.Infrastructure.Common.AppLogger.DebugRateLimited("忽略异常: " + ex.GetType().Name + ": " + ex.Message); }
                 finally { p.Dispose(); }
             }
         }
-        catch (System.Exception ex) { PCBooster.Infrastructure.Common.AppLogger.Debug("忽略异常: " + ex.GetType().Name + ": " + ex.Message); }
+        catch (System.Exception ex) { PCBooster.Infrastructure.Common.AppLogger.DebugRateLimited("忽略异常: " + ex.GetType().Name + ": " + ex.Message); }
         if (_rivalName.Length > 0 && !_rivalLogged)
         {
             _rivalLogged = true;

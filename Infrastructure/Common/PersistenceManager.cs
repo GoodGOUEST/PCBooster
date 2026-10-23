@@ -86,12 +86,12 @@ private volatile bool _isDirty;
         if (_isDirty) TryEnqueueWrite();
         _writeQueue.CompleteAdding();
         _writerThread.Join(Constants.SHUTDOWN_FLUSH_TIMEOUT_MS);
-        try { _writeQueue.Dispose(); } catch (System.Exception ex) { PCBooster.Infrastructure.Common.AppLogger.Debug("忽略异常: " + ex.GetType().Name + ": " + ex.Message); }
+        try { _writeQueue.Dispose(); } catch (System.Exception ex) { PCBooster.Infrastructure.Common.AppLogger.DebugRateLimited("忽略异常: " + ex.GetType().Name + ": " + ex.Message); }
     }
     private void WriterLoop()
     {
         try { foreach (var action in _writeQueue.GetConsumingEnumerable()) action(); }
-        catch (System.Exception ex) { PCBooster.Infrastructure.Common.AppLogger.Debug("忽略异常: " + ex.GetType().Name + ": " + ex.Message); }
+        catch (System.Exception ex) { PCBooster.Infrastructure.Common.AppLogger.DebugRateLimited("忽略异常: " + ex.GetType().Name + ": " + ex.Message); }
     }
     /// <summary>写后复查 dirty（写入期间被标脏则再写一轮）</summary>
     private void WriteToDisk()

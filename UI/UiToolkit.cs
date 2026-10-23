@@ -1493,7 +1493,7 @@ namespace PCBooster.UI
         public static void Apply(IntPtr handle)
         {
             if (handle == IntPtr.Zero) return;
-            try { SetWindowTheme(handle, "DarkMode_Explorer", null); } catch (System.Exception ex) { PCBooster.Infrastructure.Common.AppLogger.Debug("忽略异常: " + ex.GetType().Name + ": " + ex.Message); }
+            try { SetWindowTheme(handle, "DarkMode_Explorer", null); } catch (System.Exception ex) { PCBooster.Infrastructure.Common.AppLogger.DebugRateLimited("忽略异常: " + ex.GetType().Name + ": " + ex.Message); }
         }
     }
 }

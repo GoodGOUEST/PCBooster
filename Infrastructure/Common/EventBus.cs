@@ -107,7 +107,7 @@ namespace PCBooster.Infrastructure.Common
         private static void OrderedLoop()
         {
             try { foreach (var action in _orderedQueue.GetConsumingEnumerable()) action(); }
-            catch (System.Exception ex) { PCBooster.Infrastructure.Common.AppLogger.Debug("忽略异常: " + ex.GetType().Name + ": " + ex.Message); }
+            catch (System.Exception ex) { PCBooster.Infrastructure.Common.AppLogger.DebugRateLimited("忽略异常: " + ex.GetType().Name + ": " + ex.Message); }
         }
 
         public static void Clear()

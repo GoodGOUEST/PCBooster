@@ -51,7 +51,7 @@ namespace PCBooster.Infrastructure.Common
 
         public static void ReportModuleFault(string module)
         {
-            try { ModuleFault?.Invoke(module); } catch (System.Exception ex) { PCBooster.Infrastructure.Common.AppLogger.Debug("忽略异常: " + ex.GetType().Name + ": " + ex.Message); }
+            try { ModuleFault?.Invoke(module); } catch (System.Exception ex) { PCBooster.Infrastructure.Common.AppLogger.DebugRateLimited("忽略异常: " + ex.GetType().Name + ": " + ex.Message); }
         }
     }
 }

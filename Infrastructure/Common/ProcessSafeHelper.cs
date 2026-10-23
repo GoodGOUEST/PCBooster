@@ -90,11 +90,11 @@ namespace PCBooster.Infrastructure.Common
                                 if (GetWindowThreadProcessId(h, out uint owner) != 0 && owner != 0)
                                     found.Add((int)owner);
                             }
-                            catch (System.Exception ex) { PCBooster.Infrastructure.Common.AppLogger.Debug("忽略异常: " + ex.GetType().Name + ": " + ex.Message); }
+                            catch (System.Exception ex) { PCBooster.Infrastructure.Common.AppLogger.DebugRateLimited("忽略异常: " + ex.GetType().Name + ": " + ex.Message); }
                             return true;
                         }, IntPtr.Zero);
                     }
-                    catch (System.Exception ex) { PCBooster.Infrastructure.Common.AppLogger.Debug("忽略异常: " + ex.GetType().Name + ": " + ex.Message); }
+                    catch (System.Exception ex) { PCBooster.Infrastructure.Common.AppLogger.DebugRateLimited("忽略异常: " + ex.GetType().Name + ": " + ex.Message); }
                     _windowPids = found;
                     _windowPidsAt = DateTime.Now;
                 }
@@ -123,7 +123,7 @@ namespace PCBooster.Infrastructure.Common
                         if (!o.HasAffinity) { o.Affinity = p.ProcessorAffinity; o.HasAffinity = true; }
                     }
                 }
-                catch (System.Exception ex) { PCBooster.Infrastructure.Common.AppLogger.Debug("忽略异常: " + ex.GetType().Name + ": " + ex.Message); }
+                catch (System.Exception ex) { PCBooster.Infrastructure.Common.AppLogger.DebugRateLimited("忽略异常: " + ex.GetType().Name + ": " + ex.Message); }
                 p.ProcessorAffinity = unchecked((IntPtr)(long)mask);
             });
         }
@@ -156,7 +156,7 @@ namespace PCBooster.Infrastructure.Common
         {
             if (_origins.TryGetValue(pid, out var o)) return o;
             o = new Origin();
-            try { o.Name = p.ProcessName; } catch (System.Exception ex) { PCBooster.Infrastructure.Common.AppLogger.Debug("忽略异常: " + ex.GetType().Name + ": " + ex.Message); }
+            try { o.Name = p.ProcessName; } catch (System.Exception ex) { PCBooster.Infrastructure.Common.AppLogger.DebugRateLimited("忽略异常: " + ex.GetType().Name + ": " + ex.Message); }
             try { o.StartTicks = p.StartTime.Ticks; } catch { o.StartTicks = 0; }
             _origins[pid] = o;
             return o;
@@ -183,13 +183,13 @@ namespace PCBooster.Infrastructure.Common
                     if (o.Name.Length > 0)
                     {
                         string cur = "";
-                        try { cur = p.ProcessName; } catch (System.Exception ex) { PCBooster.Infrastructure.Common.AppLogger.Debug("忽略异常: " + ex.GetType().Name + ": " + ex.Message); }
+                        try { cur = p.ProcessName; } catch (System.Exception ex) { PCBooster.Infrastructure.Common.AppLogger.DebugRateLimited("忽略异常: " + ex.GetType().Name + ": " + ex.Message); }
                         if (!string.Equals(cur, o.Name, StringComparison.OrdinalIgnoreCase)) return;
                     }
                     if (o.StartTicks > 0)
                     {
                         long t = 0;
-                        try { t = p.StartTime.Ticks; } catch (System.Exception ex) { PCBooster.Infrastructure.Common.AppLogger.Debug("忽略异常: " + ex.GetType().Name + ": " + ex.Message); }
+                        try { t = p.StartTime.Ticks; } catch (System.Exception ex) { PCBooster.Infrastructure.Common.AppLogger.DebugRateLimited("忽略异常: " + ex.GetType().Name + ": " + ex.Message); }
                         if (t != o.StartTicks) return;
                     }
                     if (o.HasPriority) p.PriorityClass = o.Priority;

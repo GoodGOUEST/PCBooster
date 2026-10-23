@@ -238,7 +238,7 @@ namespace PCBooster.Infrastructure.Common
                         if (!_exeToGame.ContainsKey(kv.Key) && !_excluded.Contains(kv.Key))
                             _exeToGame[kv.Key] = kv.Value;
             }
-            catch (System.Exception ex) { PCBooster.Infrastructure.Common.AppLogger.Debug("忽略异常: " + ex.GetType().Name + ": " + ex.Message); }
+            catch (System.Exception ex) { PCBooster.Infrastructure.Common.AppLogger.DebugRateLimited("忽略异常: " + ex.GetType().Name + ": " + ex.Message); }
         }
 
         private static void SaveCache()
@@ -253,7 +253,7 @@ namespace PCBooster.Infrastructure.Common
                 Directory.CreateDirectory(AppPaths.DataRoot);
                 AtomicFile.Write(CachePath, JsonSerializer.Serialize(copy, _jsonOptions));
             }
-            catch (System.Exception ex) { PCBooster.Infrastructure.Common.AppLogger.Debug("忽略异常: " + ex.GetType().Name + ": " + ex.Message); }
+            catch (System.Exception ex) { PCBooster.Infrastructure.Common.AppLogger.DebugRateLimited("忽略异常: " + ex.GetType().Name + ": " + ex.Message); }
         }
 
         // ── 用户配置（手动项 + 排除项）──
@@ -345,7 +345,7 @@ namespace PCBooster.Infrastructure.Common
                 var p = key?.GetValue("SteamPath") as string;
                 if (!string.IsNullOrEmpty(p) && Directory.Exists(p)) return p!.Replace('/', '\\');
             }
-            catch (System.Exception ex) { PCBooster.Infrastructure.Common.AppLogger.Debug("忽略异常: " + ex.GetType().Name + ": " + ex.Message); }
+            catch (System.Exception ex) { PCBooster.Infrastructure.Common.AppLogger.DebugRateLimited("忽略异常: " + ex.GetType().Name + ": " + ex.Message); }
             return "";
         }
 
@@ -361,7 +361,7 @@ namespace PCBooster.Infrastructure.Common
                     if (Directory.Exists(p)) libs.Add(p);
                 }
             }
-            catch (System.Exception ex) { PCBooster.Infrastructure.Common.AppLogger.Debug("忽略异常: " + ex.GetType().Name + ": " + ex.Message); }
+            catch (System.Exception ex) { PCBooster.Infrastructure.Common.AppLogger.DebugRateLimited("忽略异常: " + ex.GetType().Name + ": " + ex.Message); }
         }
 
         private static void IndexManifest(string appsDir, string manifest)
@@ -388,7 +388,7 @@ namespace PCBooster.Infrastructure.Common
                     if (++count >= MaxExePerGame) break;
                 }
             }
-            catch (System.Exception ex) { PCBooster.Infrastructure.Common.AppLogger.Debug("忽略异常: " + ex.GetType().Name + ": " + ex.Message); }
+            catch (System.Exception ex) { PCBooster.Infrastructure.Common.AppLogger.DebugRateLimited("忽略异常: " + ex.GetType().Name + ": " + ex.Message); }
         }
 
         private static string MatchVal(string text, string key)

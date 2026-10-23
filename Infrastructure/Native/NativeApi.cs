@@ -117,10 +117,10 @@ public static class NativeApi
                             };
                             // 受保护/提权进程可能拒绝读优先级，
                             // 原实现因此丢掉整条快照（进程“看不见”）。只降级该字段。
-                            try { entry.PriorityClass = p.PriorityClass; } catch (System.Exception ex) { PCBooster.Infrastructure.Common.AppLogger.Debug("忽略异常: " + ex.GetType().Name + ": " + ex.Message); }
+                            try { entry.PriorityClass = p.PriorityClass; } catch (System.Exception ex) { PCBooster.Infrastructure.Common.AppLogger.DebugRateLimited("忽略异常: " + ex.GetType().Name + ": " + ex.Message); }
                             snap.Add(entry);
                         }
-                        catch (System.Exception ex) { PCBooster.Infrastructure.Common.AppLogger.Debug("忽略异常: " + ex.GetType().Name + ": " + ex.Message); }
+                        catch (System.Exception ex) { PCBooster.Infrastructure.Common.AppLogger.DebugRateLimited("忽略异常: " + ex.GetType().Name + ": " + ex.Message); }
                         // 累计 CPU 时间单独兜底：部分受保护进程会拒绝此查询，
                         // 但不能因它丢失整个快照条目（与原行为一致）
                         try
@@ -132,13 +132,13 @@ public static class NativeApi
                                 procTimes[id] = tp;
                             }
                         }
-                        catch (System.Exception ex) { PCBooster.Infrastructure.Common.AppLogger.Debug("忽略异常: " + ex.GetType().Name + ": " + ex.Message); }
+                        catch (System.Exception ex) { PCBooster.Infrastructure.Common.AppLogger.DebugRateLimited("忽略异常: " + ex.GetType().Name + ": " + ex.Message); }
                     }
                 }
                 finally
                 {
                     // 及时释放 Process 句柄（原实现靠终结器兜底）
-                    foreach (var p in procs) { try { p.Dispose(); } catch (System.Exception ex) { PCBooster.Infrastructure.Common.AppLogger.Debug("忽略异常: " + ex.GetType().Name + ": " + ex.Message); } }
+                    foreach (var p in procs) { try { p.Dispose(); } catch (System.Exception ex) { PCBooster.Infrastructure.Common.AppLogger.DebugRateLimited("忽略异常: " + ex.GetType().Name + ": " + ex.Message); } }
                 }
                 var index = new Dictionary<string, int>(snap.Count);
                 var pidSet = new HashSet<int>(snap.Count);
@@ -243,7 +243,7 @@ public static class NativeApi
                 _cachedSessionId = (uint)self.SessionId;
                 _sessionIdReady = true;   // 仅成功才标记，失败下次重试
             }
-            catch (System.Exception ex) { PCBooster.Infrastructure.Common.AppLogger.Debug("忽略异常: " + ex.GetType().Name + ": " + ex.Message); }
+            catch (System.Exception ex) { PCBooster.Infrastructure.Common.AppLogger.DebugRateLimited("忽略异常: " + ex.GetType().Name + ": " + ex.Message); }
         }
         uint active = WTSGetActiveConsoleSessionId();
         return active == _cachedSessionId && active != 0xFFFFFFFF;
@@ -382,7 +382,7 @@ public static class NativeApi
         {
             if (GetSystemPowerStatus(out var s)) return s.ACLineStatus != 0;
         }
-        catch (System.Exception ex) { PCBooster.Infrastructure.Common.AppLogger.Debug("忽略异常: " + ex.GetType().Name + ": " + ex.Message); }
+        catch (System.Exception ex) { PCBooster.Infrastructure.Common.AppLogger.DebugRateLimited("忽略异常: " + ex.GetType().Name + ": " + ex.Message); }
         // 查询失败时按“电池”处理（保守），
         // 否则会在笔记本上写激进电源档（正是 P0-2 永久副作用的入口）
         return false;
@@ -399,7 +399,7 @@ public static class NativeApi
                 return g;
             }
         }
-        catch (System.Exception ex) { PCBooster.Infrastructure.Common.AppLogger.Debug("忽略异常: " + ex.GetType().Name + ": " + ex.Message); }
+        catch (System.Exception ex) { PCBooster.Infrastructure.Common.AppLogger.DebugRateLimited("忽略异常: " + ex.GetType().Name + ": " + ex.Message); }
         return Guid.Empty;
     }
     /// <summary>已为人识别的活动电源方案名称（供 UI 直接展示）</summary>

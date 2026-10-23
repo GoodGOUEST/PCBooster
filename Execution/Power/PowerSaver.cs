@@ -83,7 +83,7 @@ public enum WakeReason { UserActivity, Prediction, HighLoad, ScheduledTask }
                 Infrastructure.Profiling.FrequencyManager.LockMaxFrequency("接通电源", 0);
             }
         }
-        catch (System.Exception ex) { PCBooster.Infrastructure.Common.AppLogger.Debug("忽略异常: " + ex.GetType().Name + ": " + ex.Message); }
+        catch (System.Exception ex) { PCBooster.Infrastructure.Common.AppLogger.DebugRateLimited("忽略异常: " + ex.GetType().Name + ": " + ex.Message); }
     }
 
     public static void CheckWakeConditions()

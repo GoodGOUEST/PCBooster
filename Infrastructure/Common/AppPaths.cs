@@ -30,7 +30,7 @@ namespace PCBooster.Infrastructure.Common
             LogDir = Path.Combine(DataRoot, Constants.DIR_LOGS);
             ExePath = Environment.ProcessPath ?? "";
 
-            try { Directory.CreateDirectory(DataRoot); Directory.CreateDirectory(LogDir); } catch (System.Exception ex) { PCBooster.Infrastructure.Common.AppLogger.Debug("忽略异常: " + ex.GetType().Name + ": " + ex.Message); }
+            try { Directory.CreateDirectory(DataRoot); Directory.CreateDirectory(LogDir); } catch (System.Exception ex) { PCBooster.Infrastructure.Common.AppLogger.DebugRateLimited("忽略异常: " + ex.GetType().Name + ": " + ex.Message); }
         }
     }
 }

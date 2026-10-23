@@ -127,7 +127,7 @@ namespace PCBooster.UI
                     using var self = System.Diagnostics.Process.GetCurrentProcess();
                     wsMb = self.WorkingSet64 / 1024 / 1024;
                 }
-                catch (System.Exception ex) { PCBooster.Infrastructure.Common.AppLogger.Debug("忽略异常: " + ex.GetType().Name + ": " + ex.Message); }
+                catch (System.Exception ex) { PCBooster.Infrastructure.Common.AppLogger.DebugRateLimited("忽略异常: " + ex.GetType().Name + ": " + ex.Message); }
                 _self.Value = $"{cpu:F1}%";
                 _self.Detail = $"内存 {wsMb} MB\n目标 <0.3% / <80MB";
 
@@ -237,7 +237,7 @@ namespace PCBooster.UI
             for (int i = 0; i < exes.Count; i++)
             {
                 string rel = exes[i];
-                try { rel = Path.GetRelativePath(folder, exes[i]); } catch (System.Exception ex) { PCBooster.Infrastructure.Common.AppLogger.Debug("忽略异常: " + ex.GetType().Name + ": " + ex.Message); }
+                try { rel = Path.GetRelativePath(folder, exes[i]); } catch (System.Exception ex) { PCBooster.Infrastructure.Common.AppLogger.DebugRateLimited("忽略异常: " + ex.GetType().Name + ": " + ex.Message); }
                 list.Items.Add($"{Path.GetFileName(exes[i])}    ({rel}, {SizeMb(exes[i])} MB)", i == 0);
             }
             dlg.Controls.Add(list);

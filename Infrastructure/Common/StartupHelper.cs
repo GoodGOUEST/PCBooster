@@ -90,7 +90,7 @@ namespace PCBooster.Infrastructure.Common
                     FallbackRunKey(true);
                     AppLogger.Info("🔧 开机自启已自愈（原任务/键失效或指向旧路径）");
                 }
-                catch (System.Exception ex) { PCBooster.Infrastructure.Common.AppLogger.Debug("忽略异常: " + ex.GetType().Name + ": " + ex.Message); }
+                catch (System.Exception ex) { PCBooster.Infrastructure.Common.AppLogger.DebugRateLimited("忽略异常: " + ex.GetType().Name + ": " + ex.Message); }
             });
         }
 

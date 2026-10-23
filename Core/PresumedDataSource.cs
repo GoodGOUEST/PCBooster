@@ -35,7 +35,7 @@ namespace PCBooster.Core
                     _lastGood = v; _hasLastGood = true; Confidence = 1.0;
                     return v;
                 }
-                catch (System.Exception ex) { PCBooster.Infrastructure.Common.AppLogger.Debug("忽略异常: " + ex.GetType().Name + ": " + ex.Message); }
+                catch (System.Exception ex) { PCBooster.Infrastructure.Common.AppLogger.DebugRateLimited("忽略异常: " + ex.GetType().Name + ": " + ex.Message); }
 
                 // 上次好值也要过有效性校验（进程可能已退出，PID 可能被复用）
                 if (_hasLastGood && (_isValid == null || _isValid(_lastGood)))
@@ -49,7 +49,7 @@ namespace PCBooster.Core
                     Confidence = EqualityComparer<T>.Default.Equals(v, _fallback) ? 0.1 : 0.4;
                     return v;
                 }
-                catch (System.Exception ex) { PCBooster.Infrastructure.Common.AppLogger.Debug("忽略异常: " + ex.GetType().Name + ": " + ex.Message); }
+                catch (System.Exception ex) { PCBooster.Infrastructure.Common.AppLogger.DebugRateLimited("忽略异常: " + ex.GetType().Name + ": " + ex.Message); }
 
                 Confidence = 0.1;
                 return _fallback;

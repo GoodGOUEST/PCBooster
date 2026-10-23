@@ -154,7 +154,7 @@ namespace PCBooster.Infrastructure.Common
             if (_isDisposed) return;
             _isRunning = false;
             try { _timer?.Change(-1, -1); }
-            catch (System.Exception ex) { PCBooster.Infrastructure.Common.AppLogger.Debug("忽略异常: " + ex.GetType().Name + ": " + ex.Message); }
+            catch (System.Exception ex) { PCBooster.Infrastructure.Common.AppLogger.DebugRateLimited("忽略异常: " + ex.GetType().Name + ": " + ex.Message); }
         }
 
         public void Dispose()
@@ -169,7 +169,7 @@ namespace PCBooster.Infrastructure.Common
                 // 500ms → 50ms（退出时不让 5 个定时器串行拖 2 秒）
                 wait.WaitOne(50);
             }
-            catch (System.Exception ex) { PCBooster.Infrastructure.Common.AppLogger.Debug("忽略异常: " + ex.GetType().Name + ": " + ex.Message); }
+            catch (System.Exception ex) { PCBooster.Infrastructure.Common.AppLogger.DebugRateLimited("忽略异常: " + ex.GetType().Name + ": " + ex.Message); }
             finally
             {
                 _timer = null;

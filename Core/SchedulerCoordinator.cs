@@ -141,7 +141,7 @@ private static int _lastRuleVersion;
                 if (p.Id == live) { name = p.ProcessName; break; }
             if (!string.IsNullOrEmpty(name)) HandleForeground(live, name);
         }
-        catch (System.Exception ex) { PCBooster.Infrastructure.Common.AppLogger.Debug("忽略异常: " + ex.GetType().Name + ": " + ex.Message); }
+        catch (System.Exception ex) { PCBooster.Infrastructure.Common.AppLogger.DebugRateLimited("忽略异常: " + ex.GetType().Name + ": " + ex.Message); }
     }
 
     public static void HandleForeground(int pid, string name)

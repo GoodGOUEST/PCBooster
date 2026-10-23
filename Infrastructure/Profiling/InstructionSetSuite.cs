@@ -283,7 +283,7 @@ public sealed class PerfCounterHelper : IDisposable
     {
         if (!IsAvailable) return 0;
         if ((DateTime.Now - _cacheTime).TotalSeconds < cacheSeconds) return _cached;
-        try { _cached = _counter.NextValue(); _cacheTime = DateTime.Now; } catch (System.Exception ex) { PCBooster.Infrastructure.Common.AppLogger.Debug("忽略异常: " + ex.GetType().Name + ": " + ex.Message); }
+        try { _cached = _counter.NextValue(); _cacheTime = DateTime.Now; } catch (System.Exception ex) { PCBooster.Infrastructure.Common.AppLogger.DebugRateLimited("忽略异常: " + ex.GetType().Name + ": " + ex.Message); }
         return _cached;
     }
     public void Dispose() => _counter?.Dispose();

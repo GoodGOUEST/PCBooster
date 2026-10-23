@@ -71,7 +71,7 @@ namespace PCBooster.UI
             if (disposing)
             {
                 // 防抖窗口内退出会丢掉最后几次修改，这里先 flush
-                try { if (_saveTimer != null && _saveTimer.Enabled) { _saveTimer.Stop(); SaveNow(); } } catch (System.Exception ex) { PCBooster.Infrastructure.Common.AppLogger.Debug("忽略异常: " + ex.GetType().Name + ": " + ex.Message); }
+                try { if (_saveTimer != null && _saveTimer.Enabled) { _saveTimer.Stop(); SaveNow(); } } catch (System.Exception ex) { PCBooster.Infrastructure.Common.AppLogger.DebugRateLimited("忽略异常: " + ex.GetType().Name + ": " + ex.Message); }
                 _saveTimer?.Stop();
                 _saveTimer?.Dispose();
                 _diagTimer?.Stop();
@@ -363,7 +363,7 @@ namespace PCBooster.UI
                                     "提示", MessageBoxButtons.OK, MessageBoxIcon.Information);
                             }));
                         }
-                        catch (System.Exception ex) { PCBooster.Infrastructure.Common.AppLogger.Debug("忽略异常: " + ex.GetType().Name + ": " + ex.Message); }
+                        catch (System.Exception ex) { PCBooster.Infrastructure.Common.AppLogger.DebugRateLimited("忽略异常: " + ex.GetType().Name + ": " + ex.Message); }
                     });
                 });
             card.Add(_rowStartup);

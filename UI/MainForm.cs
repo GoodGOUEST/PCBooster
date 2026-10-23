@@ -228,7 +228,7 @@ namespace PCBooster.UI
         internal void RestoreFromAnotherInstance()
         {
             if (!IsHandleCreated) return;
-            try { BeginInvoke((System.Action)RestoreWindow); } catch (System.Exception ex) { PCBooster.Infrastructure.Common.AppLogger.Debug("忽略异常: " + ex.GetType().Name + ": " + ex.Message); }
+            try { BeginInvoke((System.Action)RestoreWindow); } catch (System.Exception ex) { PCBooster.Infrastructure.Common.AppLogger.DebugRateLimited("忽略异常: " + ex.GetType().Name + ": " + ex.Message); }
         }
 
         private void ShowPrivacyGuideIfNeeded()
@@ -277,7 +277,7 @@ namespace PCBooster.UI
                 DwmSetWindowAttribute(Handle, 36, ref text, sizeof(int));    // DWMWA_TEXT_COLOR
                 DwmSetWindowAttribute(Handle, 34, ref border, sizeof(int));  // DWMWA_BORDER_COLOR
             }
-            catch (System.Exception ex) { PCBooster.Infrastructure.Common.AppLogger.Debug("忽略异常: " + ex.GetType().Name + ": " + ex.Message); }
+            catch (System.Exception ex) { PCBooster.Infrastructure.Common.AppLogger.DebugRateLimited("忽略异常: " + ex.GetType().Name + ": " + ex.Message); }
         }
 
         private void OnMainFormClosing(object sender, FormClosingEventArgs e)

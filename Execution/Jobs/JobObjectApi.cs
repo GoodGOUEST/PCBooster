@@ -177,7 +177,7 @@ public string IoPriority { get; set; } = "Normal";
             IntPtr h = OpenProcess(PROCESS_SET_INFORMATION, false, pid);
             if (h != IntPtr.Zero)
             {
-                try { SetPriorityClass(h, PROCESS_MODE_BACKGROUND_END); } catch (System.Exception ex) { PCBooster.Infrastructure.Common.AppLogger.Debug("忽略异常: " + ex.GetType().Name + ": " + ex.Message); }
+                try { SetPriorityClass(h, PROCESS_MODE_BACKGROUND_END); } catch (System.Exception ex) { PCBooster.Infrastructure.Common.AppLogger.DebugRateLimited("忽略异常: " + ex.GetType().Name + ": " + ex.Message); }
                 CloseHandle(h);
             }
         }
