@@ -1,7 +1,7 @@
 // ============================================================
-// PC Booster v3.6.8
+// PC Booster v3.9.8
+// SPDX-License-Identifier: GPL-3.0-or-later
 // Execution/Power/PowerSaver.cs
-// 修复: D6 轻待命休眠阈值（原 >=7 永不触发 → MODULE_SLEEP_PRIORITY_LIGHT=5）
 // ============================================================
 using PCBooster.Infrastructure.Common;
 using PCBooster.Infrastructure.Native;
@@ -35,8 +35,8 @@ public enum WakeReason { UserActivity, Prediction, HighLoad, ScheduledTask }
         RegisterModule(ModuleRegistry.Names.ProcessRuleEngine, 5);
         RegisterModule(ModuleRegistry.Names.UnifiedPreloader, 6);
         RegisterModule(ModuleRegistry.Names.IntelligenceEngine, 1);
-        // ★ 3.6.8 修复: 这两个模块此前从未注册 → IsModuleSleeping 永远 false，
-        //   深度休眠/轻待命的模块门控对它们完全无效。
+        // 这两个模块此前从未注册 → IsModuleSleeping 永远 false，
+        // 深度休眠/轻待命的模块门控对它们完全无效。
         RegisterModule(ModuleRegistry.Names.MemoryReclaimer, 3);
         RegisterModule(ModuleRegistry.Names.AutoJobManager, 4);
         _idlePollTimer = new SafeTimer("UserActivityPoll", PollGlobalInput,
@@ -50,7 +50,7 @@ public enum WakeReason { UserActivity, Prediction, HighLoad, ScheduledTask }
             _modules[name] = new ModuleState
             { Name = name, Priority = priority, IsSleeping = false, LastAwake = DateTime.Now };
     }
-    /// <summary>★ 3.6.8: 模块休眠查询（供调度器门控真正生效）</summary>
+    /// <summary>模块休眠查询（供调度器门控真正生效）</summary>
     public static bool IsModuleSleeping(string moduleName)
     {
         if (string.IsNullOrEmpty(moduleName)) return false;
@@ -61,7 +61,7 @@ public enum WakeReason { UserActivity, Prediction, HighLoad, ScheduledTask }
         if (!NativeApi.IsSessionActive()) return;
         if (NativeApi.GetGlobalIdleSeconds() < 2) OnUserActivity();
     }
-    // ★ 本轮新增: 电源来源变化（笔记本拔插电）时立即重算，而不是等下次进游戏
+    // 电源来源变化（笔记本拔插电）时立即重算，而不是等下次进游戏
     private static bool? _lastOnAc;
 
     private static void CheckPowerSource()
@@ -83,7 +83,7 @@ public enum WakeReason { UserActivity, Prediction, HighLoad, ScheduledTask }
                 Infrastructure.Profiling.FrequencyManager.LockMaxFrequency("接通电源", 0);
             }
         }
-        catch { }
+        catch (System.Exception ex) { PCBooster.Infrastructure.Common.AppLogger.Debug("忽略异常: " + ex.GetType().Name + ": " + ex.Message); }
     }
 
     public static void CheckWakeConditions()
@@ -97,7 +97,7 @@ public enum WakeReason { UserActivity, Prediction, HighLoad, ScheduledTask }
             if (currentState != PowerState.Active) SetState(PowerState.Active);
             return;
         }
-        // ★ 3.6.8 修复: 系统有形负载也算“在忙”——挂机编译/渲染/下载时不再降核
+        // 系统有形负载也算“在忙”——挂机编译/渲染/下载时不再降核
         //（原实现只看键鼠空闲，完全可能把正在干活的机器压到 20% 核心）
         if (NativeApi.GetCpuUsage() > Constants.DEEP_SLEEP_CPU_GUARD)
         {
@@ -124,7 +124,7 @@ public enum WakeReason { UserActivity, Prediction, HighLoad, ScheduledTask }
             switch (newState)
             {
                 case PowerState.Active:
-                    NativeApi.RestoreParkingBaseline();   // ★ 3.6.8: 回到用户原值，而不是固定 100%
+                    NativeApi.RestoreParkingBaseline();   // 回到用户原值，而不是固定 100%
                     WakeAllLocked();
                     break;
                 case PowerState.LightStandby:
@@ -158,7 +158,7 @@ public enum WakeReason { UserActivity, Prediction, HighLoad, ScheduledTask }
                 changed = true;
                 if (target == PowerState.Active)
                 {
-                    NativeApi.RestoreParkingBaseline();   // ★ 3.6.8: 恢复原停泊值，不再固定 100%
+                    NativeApi.RestoreParkingBaseline();   // 恢复原停泊值，不再固定 100%
                     WakeAllLocked();
                 }
             }
@@ -171,7 +171,7 @@ public enum WakeReason { UserActivity, Prediction, HighLoad, ScheduledTask }
     public static void OnUserActivity()
     {
         lock (_lock) _lastUserActivity = DateTime.Now;
-        // ★ 3.6.8: 复用 WakeUp（原实现手写一遍休眠状态回切，且 WakeUp 成为死代码）
+        // 复用 WakeUp（原实现手写一遍休眠状态回切，且 WakeUp 成为死代码）
         if (GetCurrentState() != PowerState.Active)
             WakeUp(PowerState.Active, WakeReason.UserActivity);
     }
@@ -199,7 +199,7 @@ public enum WakeReason { UserActivity, Prediction, HighLoad, ScheduledTask }
         foreach (var m in _modules.Values)
         { m.IsSleeping = false; m.LastAwake = DateTime.Now; }
     }
-    /// <summary>★ D6修复: 轻待命休眠优先级≥5模块（原>=7 永不触发）</summary>
+    /// <summary>轻待命休眠优先级≥5模块（原>=7 永不触发）</summary>
     private static void SleepLowPriorityLocked()
     {
         foreach (var m in _modules.Values)

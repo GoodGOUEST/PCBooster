@@ -1,8 +1,8 @@
 // ============================================================
-// PC Booster v3.6.8
+// PC Booster v3.9.8
+// SPDX-License-Identifier: GPL-3.0-or-later
 // Infrastructure/Cache/CacheManager.cs
 // 统一缓存（通用缓存 + 系统状态 + 预热）
-// 3.6.7: 30s 清理间隔具名化（CACHE_CLEANUP_INTERVAL_SECONDS）
 // ============================================================
 using System.Collections.Concurrent;
 using System.Threading.Tasks;
@@ -59,8 +59,8 @@ private class CacheEntry { public object Value; public DateTime ExpiresAt; }
             await Task.WhenAll(
                 Task.Run(() => NativeApi.RefreshMetricsInBackground()),
                 Task.Run(() => CpuTopology.Detect()));
-            // ★ 3.6.8: 规则索引由 ProcessRuleEngine.Initialize 自己维护，
-            //   这里不再反向依赖 Execution（去掉一处跨层反向依赖）。
+            // 规则索引由 ProcessRuleEngine.Initialize 自己维护，
+            // 这里不再反向依赖 Execution（去掉一处跨层反向依赖）。
         }
         catch (Exception ex) { AppLogger.Error($"缓存预热异常: {ex.Message}"); }
         finally { _warmupCompleted = true; }

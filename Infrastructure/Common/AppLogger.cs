@@ -1,7 +1,8 @@
 // ============================================================
-// PC Booster v3.6.8
+// PC Booster v3.9.8
+// SPDX-License-Identifier: GPL-3.0-or-later
 // Infrastructure/Common/AppLogger.cs
-// 日志（B模式: 日志目录改 %AppData%\PCBooster\logs）
+// 日志（B模式: 日志目录改 %AppData%/PCBooster/logs）
 // ============================================================
 
 using System.Collections.Concurrent;
@@ -38,7 +39,7 @@ namespace PCBooster.Infrastructure.Common
         public static void Info(string message) => Enqueue("INFO", message);
         public static void Warning(string message) => Enqueue("WARN", message);
 
-        /// <summary>★ 3.6.7 修复: 关键日志不再在调用线程同步落盘（原实现会拖慢心跳线程）；
+        /// <summary>关键日志不再在调用线程同步落盘（原实现会拖慢心跳线程）；
         /// 入队成功即返回，队列满或未初始化时退化为直写，关键日志仍不丢。</summary>
         public static void Error(string message)
         {
@@ -55,7 +56,7 @@ namespace PCBooster.Infrastructure.Common
                 if (string.IsNullOrEmpty(file)) return;
                 lock (_fileLock) File.AppendAllText(file, line + Environment.NewLine);
             }
-            catch { }
+            catch { /* 日志子系统自身失败：不再记录，避免递归 */ }
         }
 
         private static void Enqueue(string level, string message)
@@ -87,7 +88,7 @@ namespace PCBooster.Infrastructure.Common
                     batch.Clear();
                 }
             }
-            catch { }
+            catch { /* 日志子系统自身失败：不再记录，避免递归 */ }
         }
 
         private static void WriteBatch(List<string> batch)
@@ -97,10 +98,10 @@ namespace PCBooster.Infrastructure.Common
                 RollDate();
                 var file = Volatile.Read(ref _currentFile);
                 if (string.IsNullOrEmpty(file)) return;
-                // ★ 3.6.7 修复: 与 Error 直写共用锁，避免两个写入者争抢文件句柄丢日志
+                // 与 Error 直写共用锁，避免两个写入者争抢文件句柄丢日志
                 lock (_fileLock) File.AppendAllLines(file, batch);
             }
-            catch { }
+            catch { /* 日志子系统自身失败：不再记录，避免递归 */ }
         }
 
         private static void RollDate()
@@ -120,7 +121,7 @@ namespace PCBooster.Infrastructure.Common
                 foreach (var file in Directory.GetFiles(AppPaths.LogDir, "booster_*.log"))
                     if (File.GetLastWriteTime(file) < cutoff) File.Delete(file);
             }
-            catch { }
+            catch { /* 日志子系统自身失败：不再记录，避免递归 */ }
         }
 
         public static void Shutdown()

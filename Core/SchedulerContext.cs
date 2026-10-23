@@ -1,5 +1,6 @@
 // ============================================================
-// PC Booster v3.6.8
+// PC Booster v3.9.8
+// SPDX-License-Identifier: GPL-3.0-or-later
 // Core/SchedulerContext.cs
 // 调度上下文（周期级只读快照，UI 与决策同源，修复 U8）
 // ============================================================
@@ -18,6 +19,6 @@ namespace PCBooster.Core
         public List<int> PreloadPids { get; init; } = new();
         public string Scene { get; init; } = "";
         public double DataConfidence { get; init; } = 1.0;
-        // ★ 3.6.8 修复: 删除 CollectedAt / Cycle（定义后从未被任何代码读取）
+        // 删除 CollectedAt / Cycle（定义后从未被任何代码读取）
     }
 }

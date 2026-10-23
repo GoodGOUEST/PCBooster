@@ -1,5 +1,6 @@
 // ============================================================
-// PC Booster v3.6.8
+// PC Booster v3.9.8
+// SPDX-License-Identifier: GPL-3.0-or-later
 // UI/AdvancedControlPage.cs
 // 设置页（UI 重写）：全部参数集中，两列卡片 + 自动测量行高 + 自动保存
 // 与旧版区别: 不再用固定坐标；每行按实测文字高度排布，窗口/DPI 变化不会重叠
@@ -69,8 +70,8 @@ namespace PCBooster.UI
         {
             if (disposing)
             {
-                // ★ 本轮修复: 防抖窗口内退出会丢掉最后几次修改，这里先 flush
-                try { if (_saveTimer != null && _saveTimer.Enabled) { _saveTimer.Stop(); SaveNow(); } } catch { }
+                // 防抖窗口内退出会丢掉最后几次修改，这里先 flush
+                try { if (_saveTimer != null && _saveTimer.Enabled) { _saveTimer.Stop(); SaveNow(); } } catch (System.Exception ex) { PCBooster.Infrastructure.Common.AppLogger.Debug("忽略异常: " + ex.GetType().Name + ": " + ex.Message); }
                 _saveTimer?.Stop();
                 _saveTimer?.Dispose();
                 _diagTimer?.Stop();
@@ -153,7 +154,7 @@ namespace PCBooster.UI
                     if (_loading) return;
                     AppConfig.EnableWorkingSetLock = v;
                     ScheduleSave();
-                    // ★ 本轮修复: 关闭开关时释放已加的工作集下限，否则进程直到退出都保持锁定
+                    // 关闭开关时释放已加的工作集下限，否则进程直到退出都保持锁定
                     if (!v) System.Threading.Tasks.Task.Run(() => WorkingSetLock.ReleaseAllFloors());
                 });
             card.Add(_rowWorkingSet);
@@ -171,7 +172,7 @@ namespace PCBooster.UI
             _adminHint = new TextBlock("", Theme.FontSmall, Theme.TextMuted);
             card.Add(_adminHint);
 
-            // ★ 本轮新增: 标准权限时直接给一个提权入口（不再只有一句“需要以管理员身份重启”）
+            // 标准权限时直接给一个提权入口（不再只有一句“需要以管理员身份重启”）
             if (!AppEnvironment.IsElevated)
             {
                 var elevate = UiToolkit.CreatePrimaryButton("以管理员重启");
@@ -341,8 +342,8 @@ namespace PCBooster.UI
                     if (_loading) return;
                     AppConfig.LaunchAtStartup = v;
                     ScheduleSave();
-                    // ★ 本轮修复: 建/删计划任务要走 UAC，原来在 UI 线程同步等，
-                    //   点一下开关窗口就“死”住。改到后台线程，并根据实际结果回滚开关。
+                    // 建/删计划任务要走 UAC，原来在 UI 线程同步等，
+                    // 点一下开关窗口就“死”住。改到后台线程，并根据实际结果回滚开关。
                     var row = _rowStartup;
                     System.Threading.Tasks.Task.Run(() =>
                     {
@@ -362,7 +363,7 @@ namespace PCBooster.UI
                                     "提示", MessageBoxButtons.OK, MessageBoxIcon.Information);
                             }));
                         }
-                        catch { }
+                        catch (System.Exception ex) { PCBooster.Infrastructure.Common.AppLogger.Debug("忽略异常: " + ex.GetType().Name + ": " + ex.Message); }
                     });
                 });
             card.Add(_rowStartup);
@@ -450,9 +451,9 @@ namespace PCBooster.UI
                 _rowTray.SetChecked(AppConfig.EnableTrayResident);
                 _rowStartup.SetChecked(AppConfig.LaunchAtStartup);
 
-                // ★ 本轮修复: 游戏核数不能占满全部物理核（否则后台罩无核可分，隔离永远不生效）。
-                //   拓扑就绪后把上限收紧到“物理核数 - 2”；历史配置里的 16/16 自动退回自动推荐。
-                //   关掉“核心隔离调度”时不再限制，允许把全部核给游戏。
+                // 游戏核数不能占满全部物理核（否则后台罩无核可分，隔离永远不生效）。
+                // 拓扑就绪后把上限收紧到“物理核数 - 2”；历史配置里的 16/16 自动退回自动推荐。
+                // 关掉“核心隔离调度”时不再限制，允许把全部核给游戏。
                 int phys = CpuTopology.PhysicalCoreCount;
                 int storedCores = (int)AppConfig.GetDouble(ConfigSchema.GameCoreCount, 0);
                 bool isolationOn = AppConfig.GetBool(ConfigSchema.EnableInstructionSetScheduling, true);

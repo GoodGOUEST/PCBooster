@@ -1,5 +1,6 @@
 // ============================================================
-// PC Booster v3.6.8
+// PC Booster v3.9.8
+// SPDX-License-Identifier: GPL-3.0-or-later
 // Core/AdaptiveScheduler.cs
 // 自适应负载分级（2秒缓存 + 负载变化重置效果）
 // ============================================================
@@ -30,7 +31,7 @@ namespace PCBooster.Core
                 < Constants.CPU_MODERATE_THRESHOLD => LoadLevel.Moderate,
                 _ => LoadLevel.Heavy
             };
-            // ★ 3.6.8: 5 个百分点滞回——跨档后要再走出一段才确认，避免边界抖动
+            // 5 个百分点滞回——跨档后要再走出一段才确认，避免边界抖动
             if (next != _current)
             {
                 double boundary = next switch
@@ -51,8 +52,8 @@ namespace PCBooster.Core
                 _current = next;
                 EventBus.Publish(new LoadLevelChangedEvent(old.ToString(), next.ToString(),
                     DateTime.Now, EventBus.NextSeq()));
-                // ★ 本轮修复: 这里与 DecisionNecessityEvaluator 都在调用 DecayAll，同一份样本被衰减两次；
-            //   衰减统一交给评估器（每小时一次），此处不再重复衰减。
+                // 这里与 DecisionNecessityEvaluator 都在调用 DecayAll，同一份样本被衰减两次；
+            // 衰减统一交给评估器（每小时一次），此处不再重复衰减。
             }
 
             _lastEval = DateTime.Now;

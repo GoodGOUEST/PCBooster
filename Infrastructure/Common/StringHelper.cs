@@ -1,7 +1,7 @@
 // ============================================================
-// PC Booster v3.6.8
+// PC Booster v3.9.8
+// SPDX-License-Identifier: GPL-3.0-or-later
 // Infrastructure/Common/StringHelper.cs
-// 修复: D3 非法字符字面量 / 通配符正则编译缓存（256 上限）
 // ============================================================
 using System.Collections.Concurrent;
 using System.Text.RegularExpressions;
@@ -18,7 +18,7 @@ public static class StringHelper
         if (string.IsNullOrEmpty(name)) return "";
         var n = name.Trim().ToLowerInvariant();
         if (n.EndsWith(".exe")) n = n[..^4];
-        int idx = n.LastIndexOf('\\'); // ★ D3修复
+        int idx = n.LastIndexOf('\\'); // 
         if (idx >= 0) n = n[(idx + 1)..];
         return n;
     }

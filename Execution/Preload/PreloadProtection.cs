@@ -1,8 +1,8 @@
 // ============================================================
-// PC Booster v3.6.8
+// PC Booster v3.9.8
+// SPDX-License-Identifier: GPL-3.0-or-later
 // Execution/Preload/PreloadProtection.cs
 // 预加载保护（动态时长 + 上限 + 锁外事件）
-// 3.6.7: 0.5 基数具名化（PROTECTION_CONFIDENCE_BASE）
 // ============================================================
 using PCBooster.Infrastructure.Common;
 using PCBooster.Intelligence;
@@ -22,7 +22,7 @@ private static readonly Dictionary<int, DateTime> _protectedPids = new();
             var strategy = IntelligenceEngine.GetStrategy(processName);
             baseDuration = strategy.ProtectionSeconds;
         }
-        int duration = (int)(baseDuration * (Constants.PROTECTION_CONFIDENCE_BASE + confidence)); // ★ 具名
+        int duration = (int)(baseDuration * (Constants.PROTECTION_CONFIDENCE_BASE + confidence)); // 具名
         duration = Math.Clamp(duration, Constants.PROTECTION_MIN_SECONDS, Constants.PROTECTION_MAX_SECONDS);
         lock (_lock)
         {

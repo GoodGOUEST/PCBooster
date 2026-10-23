@@ -1,8 +1,9 @@
 // ============================================================
-// PC Booster v3.6.8
+// PC Booster v3.9.8
+// SPDX-License-Identifier: GPL-3.0-or-later
 // Execution/Memory/MemoryReclaimer.cs
 // ①根治: 生命迹象三重门控（WS增长/30s峰值CPU/近5分钟前台）+ 温和修剪
-//        全清仅紧急+冷+>1GB；零名字豁免
+// 全清仅紧急+冷+>1GB；零名字豁免
 // ============================================================
 using System.Threading;
 using PCBooster.Execution.Preload;
@@ -22,7 +23,7 @@ private static long _totalBytesFreed;
     private static readonly Dictionary<int, DateTime> _fgSeen = new();
     public static long ReclaimMemory(List<int> preloadPids, int foregroundPid, bool isEmergency = false)
     {
-        // ★ 3.6.8: 总开关（默认关）——Windows 自带 standby list/内存压缩，强制 Trim 往往制造二次卡顿
+        // 总开关（默认关）——Windows 自带 standby list/内存压缩，强制 Trim 往往制造二次卡顿
         if (!AppConfig.EnableMemoryReclaim) return 0;
         if (!Resilience.TryAcquire(ref _isReclaiming)) return 0;
         try
@@ -83,19 +84,19 @@ private static long _totalBytesFreed;
         {
             if (string.IsNullOrEmpty(p.ProcessName)) continue;
             if (ProcessMatcher.IsSystemProcess(p.ProcessName)) continue;
-            // ★ 3.6.8 红线: 反作弊进程不修剪（原仅预加载保护/Job 保护两层）
+            // 红线: 反作弊进程不修剪（原仅预加载保护/Job 保护两层）
             if (ProcessMatcher.IsProtected(p.ProcessName)) continue;
-            // ★ 本轮修复: 游戏工作集被 Trim 后，切回游戏要从磁盘重新读回（卡顿几秒）。
-            //   即使已经切到后台、不满足“最近前台”条件，也一律不碰。
+            // 游戏工作集被 Trim 后，切回游戏要从磁盘重新读回（卡顿几秒）。
+            // 即使已经切到后台、不满足“最近前台”条件，也一律不碰。
             if (ProcessMatcher.IsGame(p.ProcessName)) continue;
             if (p.Id == foregroundPid) continue;
             if (preloadSet.Contains(p.Id)) continue;
             if (PreloadProtection.IsProtected(p.Id)) continue;
             if (Jobs.AutoJobManager.IsJobProtected(p.Id)) continue;
-            // ★ R17: 编译工具链 / 办公保护窗口 / 浏览器活跃期 一律不修剪
+            // 编译工具链 / 办公保护窗口 / 浏览器活跃期 一律不修剪
             if (Work.WorkloadGuard.IsTrimExempt(p.Id, p.ProcessName)) continue;
-            // ★ R17 卡死修复: 有可见窗口的程序（含未识别的游戏）不 Trim——
-            //   把它的工作集抽走，切回来要从磁盘回读，体感就是“卡一下/卡死”。
+            // 卡死修复: 有可见窗口的程序（含未识别的游戏）不 Trim——
+            // 把它的工作集抽走，切回来要从磁盘回读，体感就是“卡一下/卡死”。
             if (ProcessSafeHelper.HasVisibleWindow(p.Id)) continue;
             var strategy = IntelligenceEngine.GetStrategy(p.ProcessName);
             if (!strategy.CanReclaim) continue;

@@ -1,5 +1,6 @@
 // ============================================================
-// PC Booster v3.6.8
+// PC Booster v3.9.8
+// SPDX-License-Identifier: GPL-3.0-or-later
 // Infrastructure/Common/AppPaths.cs
 // 路径中心（B模式单文件兼容：可写数据走 %AppData%）
 // ============================================================
@@ -29,7 +30,7 @@ namespace PCBooster.Infrastructure.Common
             LogDir = Path.Combine(DataRoot, Constants.DIR_LOGS);
             ExePath = Environment.ProcessPath ?? "";
 
-            try { Directory.CreateDirectory(DataRoot); Directory.CreateDirectory(LogDir); } catch { }
+            try { Directory.CreateDirectory(DataRoot); Directory.CreateDirectory(LogDir); } catch (System.Exception ex) { PCBooster.Infrastructure.Common.AppLogger.Debug("忽略异常: " + ex.GetType().Name + ": " + ex.Message); }
         }
     }
 }

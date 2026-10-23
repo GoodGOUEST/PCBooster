@@ -1,9 +1,10 @@
 // ============================================================
-// PC Booster v3.6.8
+// PC Booster v3.9.8
+// SPDX-License-Identifier: GPL-3.0-or-later
 // UI/BoosterPage.cs
 // 页面基类（UI 重写）: 统一页头 + 内容区 + 定时器生命周期
 // 说明: 页面不再依赖 AutoScroll（原生白滚动条会破相），需要滚动的页面
-//       自己在内容区放 ScrollHost。
+// 自己在内容区放 ScrollHost。
 // ============================================================
 using System.Drawing;
 using System.Windows.Forms;

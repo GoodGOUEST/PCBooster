@@ -1,8 +1,8 @@
 // ============================================================
-// PC Booster v3.6.8
+// PC Booster v3.9.8
+// SPDX-License-Identifier: GPL-3.0-or-later
 // Core/ForegroundWatcher.cs
 // 前台窗口事件钩子（取代轮询，反应 ≤50ms）
-// 3.6.7: 200ms 节流具名化（FOREGROUND_THROTTLE_MS）
 // ============================================================
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
@@ -45,7 +45,7 @@ private const uint WINEVENT_SKIPOWNPROCESS = 0x0002;
         int idObject, int idChild, uint thread, uint time)
     {
         var now = DateTime.Now;
-        if ((now - _lastFire).TotalMilliseconds < Constants.FOREGROUND_THROTTLE_MS) return; // ★ 具名
+        if ((now - _lastFire).TotalMilliseconds < Constants.FOREGROUND_THROTTLE_MS) return; // 具名
         _lastFire = now;
         Task.Run(() =>
         {

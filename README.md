@@ -4,6 +4,8 @@
 
 [English summary](#english) · [安全承诺](#安全承诺我们不做的事) · [构建](#从源码构建) · [分层架构图](docs/LAYERS.md) · [架构](docs/ARCHITECTURE.md) · [安全设计](docs/SAFETY.md)
 
+当前版本 **3.9.8** · 质量门禁见 [`scripts/gate.ps1`](scripts/gate.ps1)（构建 + 单元测试 + 空 catch + 分层审计）
+
 ---
 
 ## 它是什么
@@ -91,6 +93,16 @@ dotnet publish PCBooster.csproj -c Release -p:PublishProfile=SingleFileX64
 - 65 个源文件、约 1.15 万行 C#，唯一第三方依赖是 `System.Management`
 - 分层依赖有脚本化审计（循环依赖、反向依赖、死代码）
 - 每个执行动作都有日志，且决策日志可以从 UI 里实时看到
+
+## 质量门禁
+
+```powershell
+dotnet build PCBooster.csproj -c Release -warnaserror         # 0 警告 0 错误
+dotnet test tests\PCBooster.Tests\PCBooster.Tests.csproj      # 59 项单元测试
+pwsh scripts/gate.ps1                                         # 一键跑上面两条 + 空 catch + 分层审计基线
+```
+
+门禁会在以下情况失败：构建产生任何警告、单元测试失败、出现空 `catch {}`、循环依赖或分层违规超过基线。
 
 ## License
 

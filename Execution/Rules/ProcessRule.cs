@@ -1,5 +1,6 @@
 // ============================================================
-// PC Booster v3.6.8
+// PC Booster v3.9.8
+// SPDX-License-Identifier: GPL-3.0-or-later
 // Execution/Rules/ProcessRule.cs
 // 进程规则（数据类 + 条件匹配 + 优先级内联）
 // ============================================================
@@ -20,7 +21,7 @@ namespace PCBooster.Execution.Rules
         public string Condition { get; set; } = "";
 
         public string Action { get; set; } = "";
-        // ★ 3.6.8 修复: 默认 -1 = 不动作（原默认 2=Normal，导致新建/学习规则把所有匹配进程优先级重置）
+        // 默认 -1 = 不动作（原默认 2=Normal，导致新建/学习规则把所有匹配进程优先级重置）
         public int TargetPriority { get; set; } = -1;
         public long TargetAffinityMask { get; set; } = -1;
 
@@ -77,7 +78,7 @@ namespace PCBooster.Execution.Rules
             0 => "Idle", 1 => "BelowNormal", 2 => "Normal", 3 => "AboveNormal", 4 => "High", _ => "未指定"
         };
 
-        /// <summary>★ 3.6.8: 动作归一化。空串 + 合法 TargetPriority 视为 priority（兼容历史规则）</summary>
+        /// <summary>动作归一化。空串 + 合法 TargetPriority 视为 priority（兼容历史规则）</summary>
         public string NormalizedAction()
         {
             var a = (Action ?? "").Trim().ToLowerInvariant();

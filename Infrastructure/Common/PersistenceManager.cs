@@ -1,9 +1,9 @@
 // ============================================================
-// PC Booster v3.6.8
+// PC Booster v3.9.8
+// SPDX-License-Identifier: GPL-3.0-or-later
 // Infrastructure/Common/PersistenceManager.cs
 // 统一持久化（原子写 + 单写者线程）
-// 3.6.7: #7 原子写改 AtomicFile；写任务合并（队列至多一个写动作，
-//        do-while 复查 dirty 保证最终一致）
+// do-while 复查 dirty 保证最终一致）
 // ============================================================
 using System.Collections.Concurrent;
 using System.IO;
@@ -17,7 +17,7 @@ public sealed class PersistenceManager<T> where T : class, new()
 private readonly string _filePath;
 private readonly BlockingCollection<Action> _writeQueue = new();
 private readonly Thread _writerThread;
-private volatile int _queued; // ★ 3.6.7: 写任务合并标志
+private volatile int _queued; // 写任务合并标志
 private T _data = new();
 private volatile bool _isDirty;
     public PersistenceManager(string fileName)
@@ -54,7 +54,7 @@ private volatile bool _isDirty;
         catch (Exception ex) { AppLogger.Error($"加载失败 {_filePath}: {ex.Message}"); }
         return _data;
     }
-    /// <summary>★ 3.6.7: 入队写（合并: 队列中至多一个写动作）</summary>
+    /// <summary>入队写（合并: 队列中至多一个写动作）</summary>
     public bool Save()
     {
         if (!_isDirty) return false;
@@ -86,14 +86,14 @@ private volatile bool _isDirty;
         if (_isDirty) TryEnqueueWrite();
         _writeQueue.CompleteAdding();
         _writerThread.Join(Constants.SHUTDOWN_FLUSH_TIMEOUT_MS);
-        try { _writeQueue.Dispose(); } catch { }
+        try { _writeQueue.Dispose(); } catch (System.Exception ex) { PCBooster.Infrastructure.Common.AppLogger.Debug("忽略异常: " + ex.GetType().Name + ": " + ex.Message); }
     }
     private void WriterLoop()
     {
         try { foreach (var action in _writeQueue.GetConsumingEnumerable()) action(); }
-        catch { }
+        catch (System.Exception ex) { PCBooster.Infrastructure.Common.AppLogger.Debug("忽略异常: " + ex.GetType().Name + ": " + ex.Message); }
     }
-    /// <summary>★ 3.6.7: 写后复查 dirty（写入期间被标脏则再写一轮）</summary>
+    /// <summary>写后复查 dirty（写入期间被标脏则再写一轮）</summary>
     private void WriteToDisk()
     {
         try
@@ -110,8 +110,8 @@ private volatile bool _isDirty;
         finally
         {
             _queued = 0;
-            // ★ 3.6.7 修复: 关闭「最后一次标脏」丢失窗口 ——
-            //   若在 while 复查之后、_queued 归零之前被标脏，这里补一次入队。
+            // 关闭「最后一次标脏」丢失窗口 ——
+            // 若在 while 复查之后、_queued 归零之前被标脏，这里补一次入队。
             if (_isDirty) TryEnqueueWrite();
         }
     }

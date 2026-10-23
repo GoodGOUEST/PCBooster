@@ -1,7 +1,7 @@
 // ============================================================
-// PC Booster v3.6.8
+// PC Booster v3.9.8
+// SPDX-License-Identifier: GPL-3.0-or-later
 // Intelligence/IntelligenceEngine.cs
-// 3.6.7: 唤醒/闲时门控具名化 / 4参 Classify 透传 / OnFeedback 发布 PredictionResultEvent
 // ============================================================
 using System.Threading.Tasks;
 using PCBooster.Infrastructure.Common;
@@ -21,14 +21,14 @@ private static int _totalSamples;
 private static bool _savedOnce;
     private static List<(string process, double confidence)> _predCache = new();
     private static DateTime _predCacheTime = DateTime.MinValue;
-    private static int _predCacheTopN = -1;   // ★ 3.6.8 修复: 缓存需按 topN 区分
+    private static int _predCacheTopN = -1;   // 缓存需按 topN 区分
     private static readonly object _predLock = new();
     public static void Initialize()
     {
         _persistence = new PersistenceManager<LearningData>(Constants.FILE_LEARNING);
         var loaded = _persistence.Load();
         if (loaded != null) { _collector.Load(loaded); _models.Load(loaded); _feedback.Load(loaded); }
-        // ★ 3.6.7: 异步回调交给 SafeTimer 托管（原 fire-and-forget 会丢失异常与健康上报）
+        // 异步回调交给 SafeTimer 托管（原 fire-and-forget 会丢失异常与健康上报）
         _idleTimer = SafeTimer.Async("IdleLearning", TryIdleLearning,
             TimeSpan.FromSeconds(Constants.IDLE_CHECK_INTERVAL_SECONDS),
             TimeSpan.FromSeconds(Constants.IDLE_CHECK_INTERVAL_SECONDS),
@@ -47,14 +47,14 @@ private static bool _savedOnce;
             _collector.Collect(procs, justLaunched, fgPid, learn);
             if (learn)
             {
-                // ★ 3.6.8 修复: 实时学习序列（原来只在闲时每 5 分钟学一条）
+                // 实时学习序列（原来只在闲时每 5 分钟学一条）
                 _models.LearnSequence(_collector);
                 System.Threading.Interlocked.Add(ref _totalSamples, procs?.Length ?? 0);
             }
         }
         catch (Exception ex) { AppLogger.Debug($"采集异常: {ex.Message}"); }
     }
-    /// <summary>★ 3.6.8: 有效采集分钟数（冷启动 / UI 进度用）</summary>
+    /// <summary>有效采集分钟数（冷启动 / UI 进度用）</summary>
     public static int GetCollectedMinutes() => _collector.CollectedMinutes;
     public static List<(string process, double confidence)> Predict(int topN = 10)
     {
@@ -74,7 +74,7 @@ private static bool _savedOnce;
         var predictions = Predict(topN);
         foreach (var (process, confidence) in predictions)
         {
-            if (confidence > Constants.WAKE_CONFIDENCE_THRESHOLD) // ★ 具名
+            if (confidence > Constants.WAKE_CONFIDENCE_THRESHOLD) // 具名
             {
                 Execution.Power.PowerSaver.WakeModule(ModuleRegistry.Names.UnifiedPreloader);
                 break;
@@ -87,7 +87,7 @@ private static bool _savedOnce;
         try { return _models.Classify(_collector, processName); }
         catch { return HeuristicFallback(processName); }
     }
-    /// <summary>★ 4参活体分类透传</summary>
+    /// <summary>4参活体分类透传</summary>
     public static ProcessClass Classify(string processName, long liveWs, double liveCpu, bool isForeground)
     {
         try { return _models.Classify(_collector, processName, liveWs, liveCpu, isForeground); }
@@ -100,7 +100,7 @@ private static bool _savedOnce;
         if (ProcessMatcher.IsBrowser(processName)) return ProcessClass.HeavyMemory;
         return ProcessClass.Unknown;
     }
-    // ★ 3.6.8 性能: 策略缓存（Classify 要做滑窗统计，而慢心跳里同一进程会被反复询问）
+    // 策略缓存（Classify 要做滑窗统计，而慢心跳里同一进程会被反复询问）
     private static readonly Dictionary<string, (Strategy s, DateTime at)> _strategyCache = new();
     private static readonly object _strategyLock = new();
     public static Strategy GetStrategy(string processName)
@@ -135,8 +135,8 @@ private static bool _savedOnce;
     private static readonly object _classSummaryLock = new();
     public static Dictionary<ProcessClass, int> GetClassificationSummary()
     {
-        // ★ 3.6.8 性能: UI 每 3 秒刷新一次，原实现每次对全部档案（可达 2000 个）
-        //   重新跑滑窗统计；改为 10 秒缓存后开销降到 1/3 以下。
+        // UI 每 3 秒刷新一次，原实现每次对全部档案（可达 2000 个）
+        // 重新跑滑窗统计；改为 10 秒缓存后开销降到 1/3 以下。
         lock (_classSummaryLock)
         {
             if (_classSummary != null && (DateTime.Now - _classSummaryAt).TotalSeconds < 10)
@@ -152,7 +152,7 @@ private static bool _savedOnce;
         lock (_classSummaryLock) { _classSummary = result; _classSummaryAt = DateTime.Now; }
         return new Dictionary<ProcessClass, int>(result);
     }
-    /// <summary>★ 发布命中/抛空事件（闭合决策日志）</summary>
+    /// <summary>发布命中/抛空事件（闭合决策日志）</summary>
     public static void OnFeedback(string processName, bool hit, double confidence)
     {
         try
@@ -165,27 +165,27 @@ private static bool _savedOnce;
         catch (Exception ex) { AppLogger.Debug($"反馈异常: {ex.Message}"); }
     }
     public static double GetConfidence(string processName) => _feedback.GetConfidence(processName);
-    /// <summary>★ 3.6.8: 预测命中率（与预加载成功率严格区分）</summary>
+    /// <summary>预测命中率（与预加载成功率严格区分）</summary>
     public static void OnRuleHit(string processName) => _collector.OnRuleHit(processName);
-    /// <summary>★ 3.6.8: 用户分类覆盖（原本只有读取方，无写入入口）</summary>
+    /// <summary>用户分类覆盖（原本只有读取方，无写入入口）</summary>
     public static void SetUserOverride(string processName, string classification)
     {
         _collector.SetUserOverride(processName, classification);
-        // ★ 3.6.8: 用户覆盖后立即失效策略缓存
+        // 用户覆盖后立即失效策略缓存
         lock (_strategyLock) _strategyCache.Clear();
     }
     public static string GetScene() => _collector.GetCurrentScene();
     public static string GetStats()
         => $"🧠 {_collector.GetProcessCount()} 进程, {_models.GetPatternCount()} 模式, " +
            $"{_feedback.GetConfidenceCount()} 置信度, 命中率 {_feedback.GetHitRate():P0}";
-    /// <summary>★ 3.6.8: 闲时学习统计（供诊断页展示，避免 GetStats 成为死 API）</summary>
+    /// <summary>闲时学习统计（供诊断页展示，避免 GetStats 成为死 API）</summary>
     public static string GetLearningStats() => _learner.GetStats();
     public static bool Save()
     {
         try
         {
-            // ★ 3.6.8 性能: 采集关闭时学习数据不会增长，原实现仍每 5 分钟重写
-            //   learning_data.json（约 6MB/h 的无谓写盘）。首次保存后即跳过。
+            // 采集关闭时学习数据不会增长，原实现仍每 5 分钟重写
+            // learning_data.json（约 6MB/h 的无谓写盘）。首次保存后即跳过。
             if (!AppConfig.EnableDataCollection && _savedOnce) return false;
             var data = new LearningData();
             _collector.Export(data); _models.Export(data); _feedback.Export(data);
@@ -206,7 +206,7 @@ private static bool _savedOnce;
     private static async Task TryIdleLearning()
     {
         var (cpu, mem) = Infrastructure.Cache.CacheManager.GetSystemState();
-        if (cpu > Constants.IDLE_CPU_THRESHOLD || mem < Constants.IDLE_MEMORY_THRESHOLD) return; // ★ 具名
+        if (cpu > Constants.IDLE_CPU_THRESHOLD || mem < Constants.IDLE_MEMORY_THRESHOLD) return; // 具名
         if (!AppConfig.EnableIdleLearning) return;
         // 没有采集数据时（默认配置）跳过，避免空转与无意义写盘
         if (!AppConfig.EnableDataCollection && _collector.GetProcessCount() == 0) return;

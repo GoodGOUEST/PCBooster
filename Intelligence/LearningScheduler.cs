@@ -1,9 +1,9 @@
 // ============================================================
-// PC Booster v3.6.8
+// PC Booster v3.9.8
+// SPDX-License-Identifier: GPL-3.0-or-later
 // Intelligence/LearningScheduler.cs
 // 统一学习调度（闲时学习 + 模式固化 + 衰减）
-// 3.6.7: D11 IdleLearningCompletedEvent 回传真实固化数；
-//        固化阈值/优先级具名化（LEARN_RULE_*）
+// 固化阈值/优先级具名化（LEARN_RULE_*）
 // ============================================================
 using System.Threading.Tasks;
 using PCBooster.Infrastructure.Common;
@@ -24,14 +24,14 @@ private long _totalMs;
             await Task.Run(() => models.UpdateModels(collector));
             await Task.Run(() =>
             {
-                converted = ConvertPatternsToRules(models); // ★ D11 捕获
+                converted = ConvertPatternsToRules(models); // 捕获
                 if (converted > 0) AppLogger.Info($"📋 模式固化: {converted} 个");
             });
             var duration = (DateTime.Now - start).TotalMilliseconds;
             _totalRuns++;
             _totalMs += (long)duration;
             EventBus.Publish(new IdleLearningCompletedEvent((int)duration, converted,
-                DateTime.Now, EventBus.NextSeq())); // ★ D11
+                DateTime.Now, EventBus.NextSeq())); // 
         }
         catch (Exception ex) { AppLogger.Error($"闲时学习异常: {ex.Message}"); }
     }
@@ -54,7 +54,7 @@ private long _totalMs;
                 IsEnabled = true,
                 Priority = Constants.LEARN_RULE_PRIORITY,
                 Source = "learn",
-                // ★ 3.6.8 修复: 只做预加载，不再隐式改优先级（TargetPriority=-1）
+                // 只做预加载，不再隐式改优先级（TargetPriority=-1）
                 Action = "preload",
                 TargetPriority = -1
             };

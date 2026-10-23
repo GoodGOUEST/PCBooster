@@ -1,5 +1,6 @@
 // ============================================================
-// PC Booster v3.6.8
+// PC Booster v3.9.8
+// SPDX-License-Identifier: GPL-3.0-or-later
 // UI/GamePage.cs
 // 游戏页（UI 重写）：状态优先、操作次之、列表最后
 // 保留：手动目录 / 移除 / 一键还原 / 扫描
@@ -110,8 +111,8 @@ namespace PCBooster.UI
 
                 var powerState = PowerSaver.GetCurrentState();
                 bool locked = FrequencyManager.IsLocked;
-                // ★ 本轮修复: 这里原来显示 PowerSaver 的内部枚举（“活跃”），用户看不懂。
-                //   改成真实的 Windows 电源方案；锁频时直接写“高性能”。
+                // 这里原来显示 PowerSaver 的内部枚举（“活跃”），用户看不懂。
+                // 改成真实的 Windows 电源方案；锁频时直接写“高性能”。
                 _power.Value = locked ? "高性能" : NativeApi.GetActiveSchemeName();
                 _power.ValueColor = locked ? Theme.Success : Theme.TextSecondary;
                 _power.Detail = $"频率 {(locked ? "已锁定最高频" : string.IsNullOrEmpty(FrequencyManager.LastLockError) ? "自动调节" : "未锁定（" + FrequencyManager.LastLockError + "）")}  ·  限速 {AutoJobManager.AutoLimitedCount} 个\n" +
@@ -126,7 +127,7 @@ namespace PCBooster.UI
                     using var self = System.Diagnostics.Process.GetCurrentProcess();
                     wsMb = self.WorkingSet64 / 1024 / 1024;
                 }
-                catch { }
+                catch (System.Exception ex) { PCBooster.Infrastructure.Common.AppLogger.Debug("忽略异常: " + ex.GetType().Name + ": " + ex.Message); }
                 _self.Value = $"{cpu:F1}%";
                 _self.Detail = $"内存 {wsMb} MB\n目标 <0.3% / <80MB";
 
@@ -236,7 +237,7 @@ namespace PCBooster.UI
             for (int i = 0; i < exes.Count; i++)
             {
                 string rel = exes[i];
-                try { rel = Path.GetRelativePath(folder, exes[i]); } catch { }
+                try { rel = Path.GetRelativePath(folder, exes[i]); } catch (System.Exception ex) { PCBooster.Infrastructure.Common.AppLogger.Debug("忽略异常: " + ex.GetType().Name + ": " + ex.Message); }
                 list.Items.Add($"{Path.GetFileName(exes[i])}    ({rel}, {SizeMb(exes[i])} MB)", i == 0);
             }
             dlg.Controls.Add(list);

@@ -1,14 +1,14 @@
 // ============================================================
-// PC Booster v3.6.8
+// PC Booster v3.9.8
+// SPDX-License-Identifier: GPL-3.0-or-later
 // Execution/Preload/UnifiedPreloader.cs
 // 统一预加载器
-// 修复: L3 并发上限计数
 // 通用治理: 删除名字豁免——LockProcessMemory 已只抬下限不限增长，全应用安全
 // 3.6.8 修复:
-//   ① 结果三态化（跳过/成功/失败）——原来"已在内存""去重命中"都返回 true，
-//      导致决策效果与成功率虚高；
-//   ② 文件触碰上限 100MB→8MB 且启用 SequentialScan（见 NativeApi.PreloadProcess）；
-//   ③ 预加载 = 内存驻留预热，不会启动未运行的程序（与文案一致）。
+// ① 结果三态化（跳过/成功/失败）——原来"已在内存""去重命中"都返回 true，
+// 导致决策效果与成功率虚高；
+// ② 文件触碰上限 100MB→8MB 且启用 SequentialScan（见 NativeApi.PreloadProcess）；
+// ③ 预加载 = 内存驻留预热，不会启动未运行的程序（与文案一致）。
 // ============================================================
 using System.Threading;
 using System.Threading.Tasks;
@@ -18,7 +18,7 @@ using PCBooster.Infrastructure.Native;
 using PCBooster.Intelligence;
 namespace PCBooster.Execution.Preload
 {
-/// <summary>预加载结果（★ 3.6.8: 区分跳过，避免把"不需要"算成"成功"）</summary>
+/// <summary>预加载结果（区分跳过，避免把"不需要"算成"成功"）</summary>
 public enum PreloadOutcome { Skipped, Preloaded, Failed }
 /// <summary>统一预加载器</summary>
 public static class UnifiedPreloader
@@ -34,7 +34,7 @@ private static int _skipDedup, _skipInMemory, _skipNotAllowed, _skipBusy;
         return false;
     }
     private static void EndPreload() => Interlocked.Decrement(ref _activePreloads);
-    /// <summary>★ 3.6.8: 三态返回（调度器据此决定是否计入决策效果）</summary>
+    /// <summary>三态返回（调度器据此决定是否计入决策效果）</summary>
     public static async Task<PreloadOutcome> TryPreloadAsync(
         int pid, string processName, double confidence,
         Action<string> logCallback = null, bool isWarmup = false)
@@ -54,7 +54,7 @@ private static int _skipDedup, _skipInMemory, _skipNotAllowed, _skipBusy;
                 return PreloadOutcome.Skipped;
             }
             if (!ProcessSafeHelper.IsAlive(pid)) return PreloadOutcome.Skipped;
-            // ★ 3.6.8: 通用缓存层做重复预加载去重（10 分钟内同一进程不重复预热）
+            // 通用缓存层做重复预加载去重（10 分钟内同一进程不重复预热）
             string cacheKey = "preloaded:" + processName;
             bool cacheOn = AppConfig.GetBool(ConfigSchema.EnableMetadataCache, true);
             if (cacheOn && CacheManager.Get<string>(cacheKey) != null)

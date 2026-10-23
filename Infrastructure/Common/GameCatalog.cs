@@ -1,15 +1,16 @@
 // ============================================================
-// PC Booster v3.6.8
+// PC Booster v3.9.8
+// SPDX-License-Identifier: GPL-3.0-or-later
 // Infrastructure/Common/GameCatalog.cs
-// 游戏识别目录（★ 3.6.8 新增；增补：用户手动指定目录）
+// 游戏识别目录（新增；增补：用户手动指定目录）
 // 缘起: 原 ProcessMatcher.IsGame 只有 12 个关键词硬匹配，
-//       eldenring.exe / gta5.exe / apex_legends.exe 等全部识别不到，
-//       导致整套“游戏场景”策略不触发。
+// eldenring.exe / gta5.exe / apex_legends.exe 等全部识别不到，
+// 导致整套“游戏场景”策略不触发。
 // 方案: 三路来源合并为 exe名 → 游戏名 索引
-//       1) Steam 库解析（libraryfolders.vdf + appmanifest_*.acf），缓存 24h
-//       2) 用户手动指定安装目录（Epic / GOG / 独立游戏 / 绿色版 / 自编译）
-//       3) 排除列表（误识别可移除，重新扫描不会复活）
-//       ★ 手动项与排除项独立落盘 usergames.json，不随 games.json 缓存过期丢失。
+// 1) Steam 库解析（libraryfolders.vdf + appmanifest_*.acf），缓存 24h
+// 2) 用户手动指定安装目录（Epic / GOG / 独立游戏 / 绿色版 / 自编译）
+// 3) 排除列表（误识别可移除，重新扫描不会复活）
+// 手动项与排除项独立落盘 usergames.json，不随 games.json 缓存过期丢失。
 // ============================================================
 using System;
 using System.Collections.Generic;
@@ -47,7 +48,7 @@ namespace PCBooster.Infrastructure.Common
 
         static GameCatalog()
         {
-            // ★ 手动项先于缓存/扫描载入——同名时用户配置优先级最高
+            // 手动项先于缓存/扫描载入——同名时用户配置优先级最高
             LoadUserData();
         }
 
@@ -104,7 +105,7 @@ namespace PCBooster.Infrastructure.Common
         /// <summary>取消标记（写入排除表，重新扫描不会复活）</summary>
         public static void Unmark(string exeName) => RemoveEntries(new[] { exeName });
 
-        // ═══════════ 手动目录（★ 3.6.8 增补）═══════════
+        // ═══════════ 手动目录（增补）═══════════
 
         /// <summary>枚举目录内的候选可执行文件（按体积降序，主程序通常最大）</summary>
         public static List<string> FindExecutables(string folder)
@@ -114,8 +115,8 @@ namespace PCBooster.Infrastructure.Common
             foreach (var exe in EnumerateExes(folder, ManualScanDepth))
             {
                 var fileName = Path.GetFileNameWithoutExtension(exe);
-                // ★ 3.6.8: 手动添加时保留 launcher（不少游戏主入口就叫 Launcher.exe）；
-                //   自动 Steam 扫描仍需过滤，避免多个游戏抢同一个 launcher.exe 名字。
+                // 手动添加时保留 launcher（不少游戏主入口就叫 Launcher.exe）；
+                // 自动 Steam 扫描仍需过滤，避免多个游戏抢同一个 launcher.exe 名字。
                 if (IsHelperExe(exe) && !fileName.Contains("launcher", StringComparison.OrdinalIgnoreCase))
                     continue;
                 if (fileName.Length < 3) continue;
@@ -237,7 +238,7 @@ namespace PCBooster.Infrastructure.Common
                         if (!_exeToGame.ContainsKey(kv.Key) && !_excluded.Contains(kv.Key))
                             _exeToGame[kv.Key] = kv.Value;
             }
-            catch { }
+            catch (System.Exception ex) { PCBooster.Infrastructure.Common.AppLogger.Debug("忽略异常: " + ex.GetType().Name + ": " + ex.Message); }
         }
 
         private static void SaveCache()
@@ -252,7 +253,7 @@ namespace PCBooster.Infrastructure.Common
                 Directory.CreateDirectory(AppPaths.DataRoot);
                 AtomicFile.Write(CachePath, JsonSerializer.Serialize(copy, _jsonOptions));
             }
-            catch { }
+            catch (System.Exception ex) { PCBooster.Infrastructure.Common.AppLogger.Debug("忽略异常: " + ex.GetType().Name + ": " + ex.Message); }
         }
 
         // ── 用户配置（手动项 + 排除项）──
@@ -321,7 +322,7 @@ namespace PCBooster.Infrastructure.Common
 
             foreach (var lib in libs)
             {
-                // ★ 3.6.8: 单个库不可读（离线盘/权限）不应中断整个扫描
+                // 单个库不可读（离线盘/权限）不应中断整个扫描
                 try
                 {
                     var appsDir = Path.Combine(lib, "steamapps");
@@ -344,7 +345,7 @@ namespace PCBooster.Infrastructure.Common
                 var p = key?.GetValue("SteamPath") as string;
                 if (!string.IsNullOrEmpty(p) && Directory.Exists(p)) return p!.Replace('/', '\\');
             }
-            catch { }
+            catch (System.Exception ex) { PCBooster.Infrastructure.Common.AppLogger.Debug("忽略异常: " + ex.GetType().Name + ": " + ex.Message); }
             return "";
         }
 
@@ -360,7 +361,7 @@ namespace PCBooster.Infrastructure.Common
                     if (Directory.Exists(p)) libs.Add(p);
                 }
             }
-            catch { }
+            catch (System.Exception ex) { PCBooster.Infrastructure.Common.AppLogger.Debug("忽略异常: " + ex.GetType().Name + ": " + ex.Message); }
         }
 
         private static void IndexManifest(string appsDir, string manifest)
@@ -387,7 +388,7 @@ namespace PCBooster.Infrastructure.Common
                     if (++count >= MaxExePerGame) break;
                 }
             }
-            catch { }
+            catch (System.Exception ex) { PCBooster.Infrastructure.Common.AppLogger.Debug("忽略异常: " + ex.GetType().Name + ": " + ex.Message); }
         }
 
         private static string MatchVal(string text, string key)

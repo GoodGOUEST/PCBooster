@@ -1,8 +1,8 @@
 // ============================================================
-// PC Booster v3.6.8
+// PC Booster v3.9.8
+// SPDX-License-Identifier: GPL-3.0-or-later
 // Execution/Jobs/JobObjectApi.cs
-// 修复: D7 默认值 0（不写该限制，杜绝隐式硬帽）/ 句柄三道闸防泄漏 /
-//       清理走 IsPidAliveCached
+// 清理走 IsPidAliveCached
 // ============================================================
 using System.Runtime.InteropServices;
 using PCBooster.Infrastructure.Common;
@@ -14,8 +14,8 @@ public static class JobObjectApi
 {
 public class JobObjectLimits
 {
-public int MaxCpuPercent { get; set; } = 0;   // ★ D7: 0 = 不写该限制
-public int MaxMemoryMB { get; set; } = 0;     // ★ D7
+public int MaxCpuPercent { get; set; } = 0;   // 0 = 不写该限制
+public int MaxMemoryMB { get; set; } = 0;     // 
 public string IoPriority { get; set; } = "Normal";
 }
     [StructLayout(LayoutKind.Sequential)]
@@ -59,7 +59,7 @@ public string IoPriority { get; set; } = "Normal";
     private static extern bool CloseHandle(IntPtr hObject);
     [DllImport("kernel32.dll", SetLastError = true)]
     private static extern IntPtr OpenProcess(uint access, bool inherit, int pid);
-    // ★ 3.6.8: 后台 IO/CPU 模式（原 JobObjectLimits.IoPriority 只传不使用）
+    // 后台 IO/CPU 模式（原 JobObjectLimits.IoPriority 只传不使用）
     [DllImport("kernel32.dll", SetLastError = true)]
     private static extern bool SetPriorityClass(IntPtr hProcess, uint dwPriorityClass);
     private const uint PROCESS_MODE_BACKGROUND_BEGIN = 0x00100000;
@@ -78,8 +78,8 @@ public string IoPriority { get; set; } = "Normal";
             if (hJob == IntPtr.Zero) return false;
             if (limits.MaxMemoryMB > 0)
             {
-                // ★ 3.6.8 安全闸: 给“已经超过上限”的进程补提交帽，会让它之后的分配全部失败
-                //   （浏览器/大型软件被误杀的根因）。宁可拒绝，也不提交内存帽。
+                // 安全闸: 给“已经超过上限”的进程补提交帽，会让它之后的分配全部失败
+                // （浏览器/大型软件被误杀的根因）。宁可拒绝，也不提交内存帽。
                 long wsMb = ProcessSafeHelper.GetWorkingSet(pid) / (1024 * 1024);
                 if (wsMb > (long)limits.MaxMemoryMB * 0.8)
                 {
@@ -111,18 +111,18 @@ public string IoPriority { get; set; } = "Normal";
                     return false;
                 }
             }
-            // ★ 3.6.8 修复: 少 PROCESS_SET_INFORMATION 会导致 IoPriority=Low
-            //   的“后台模式”静默失败（SetPriorityClass 需要该权限）
+            // 少 PROCESS_SET_INFORMATION 会导致 IoPriority=Low
+            // 的“后台模式”静默失败（SetPriorityClass 需要该权限）
             hProcess = OpenProcess(PROCESS_SET_QUOTA | PROCESS_TERMINATE | PROCESS_SET_INFORMATION,
                 false, pid);
             if (hProcess == IntPtr.Zero) return false;
             assigned = AssignProcessToJobObject(hJob, hProcess);
             if (!assigned)
-                // ★ 3.6.8 修复: 原先静默失败（只写 Debug），用户点"应用"无任何反馈
+                // 原先静默失败（只写 Debug），用户点"应用"无任何反馈
                 AppLogger.Warning($"Job 施加失败 PID={pid}：进程可能已属于其他 Job（Windows 嵌套限制）或权限不足");
             if (assigned)
             {
-                // ★ 3.6.8: 兑现 IoPriority（Low = 后台 IO/CPU 模式，降低磁盘与 CPU 抢占）
+                // 兑现 IoPriority（Low = 后台 IO/CPU 模式，降低磁盘与 CPU 抢占）
                 if (string.Equals(limits.IoPriority, "Low", StringComparison.OrdinalIgnoreCase))
                     SetPriorityClass(hProcess, PROCESS_MODE_BACKGROUND_BEGIN);
                 lock (_lock)
@@ -171,13 +171,13 @@ public string IoPriority { get; set; } = "Normal";
                 found = true;
             }
         }
-        // ★ 3.6.8: 退出后台模式（锁外做系统调用）
+        // 退出后台模式（锁外做系统调用）
         if (found)
         {
             IntPtr h = OpenProcess(PROCESS_SET_INFORMATION, false, pid);
             if (h != IntPtr.Zero)
             {
-                try { SetPriorityClass(h, PROCESS_MODE_BACKGROUND_END); } catch { }
+                try { SetPriorityClass(h, PROCESS_MODE_BACKGROUND_END); } catch (System.Exception ex) { PCBooster.Infrastructure.Common.AppLogger.Debug("忽略异常: " + ex.GetType().Name + ": " + ex.Message); }
                 CloseHandle(h);
             }
         }
@@ -195,8 +195,8 @@ public string IoPriority { get; set; } = "Normal";
     }
     public static void ReleaseAll()
     {
-        // ★ 3.6.8 修复: 原来只关句柄，被设为 PROCESS_MODE_BACKGROUND_BEGIN 的进程
-        //   即使 Job 被销毁仍会停留在后台节流模式，直到进程退出。
+        // 原来只关句柄，被设为 PROCESS_MODE_BACKGROUND_BEGIN 的进程
+        // 即使 Job 被销毁仍会停留在后台节流模式，直到进程退出。
         List<int> pids;
         lock (_lock) pids = _jobHandles.Keys.ToList();
         foreach (var pid in pids) ReleaseJob(pid);

@@ -1,9 +1,10 @@
 // ============================================================
-// PC Booster v3.6.8
+// PC Booster v3.9.8
+// SPDX-License-Identifier: GPL-3.0-or-later
 // UI/MainForm.cs
 // 主窗体（UI 重写）：扁平侧栏 + 内容区 + 侧栏底部状态
 // 说明: 全面板手动排版（不依赖停靠顺序），AutoScaleMode=None，
-//       尺寸全部由 Theme.S() 按 DPI 换算，缩放后不会错位。
+// 尺寸全部由 Theme.S() 按 DPI 换算，缩放后不会错位。
 // 保留: 托盘驻留 / 关闭拦截 / 隐私引导 / 页面定时器生命周期
 // ============================================================
 using System.Drawing;
@@ -223,11 +224,11 @@ namespace PCBooster.UI
                 "重启未完成", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
 
-        /// <summary>★ 本轮新增: 第二个实例被双击时，把窗口拉回前台（托盘隐藏也能拉）</summary>
+        /// <summary>第二个实例被双击时，把窗口拉回前台（托盘隐藏也能拉）</summary>
         internal void RestoreFromAnotherInstance()
         {
             if (!IsHandleCreated) return;
-            try { BeginInvoke((System.Action)RestoreWindow); } catch { }
+            try { BeginInvoke((System.Action)RestoreWindow); } catch (System.Exception ex) { PCBooster.Infrastructure.Common.AppLogger.Debug("忽略异常: " + ex.GetType().Name + ": " + ex.Message); }
         }
 
         private void ShowPrivacyGuideIfNeeded()
@@ -276,7 +277,7 @@ namespace PCBooster.UI
                 DwmSetWindowAttribute(Handle, 36, ref text, sizeof(int));    // DWMWA_TEXT_COLOR
                 DwmSetWindowAttribute(Handle, 34, ref border, sizeof(int));  // DWMWA_BORDER_COLOR
             }
-            catch { }
+            catch (System.Exception ex) { PCBooster.Infrastructure.Common.AppLogger.Debug("忽略异常: " + ex.GetType().Name + ": " + ex.Message); }
         }
 
         private void OnMainFormClosing(object sender, FormClosingEventArgs e)
@@ -285,8 +286,8 @@ namespace PCBooster.UI
             {
                 e.Cancel = true;
                 Hide();
-                // ★ 本轮新增: 第一次“关闭到托盘”时给一次气泡提示，
-                //   否则用户会以为程序已退出（实际还在后台优化）。
+                // 第一次“关闭到托盘”时给一次气泡提示，
+                // 否则用户会以为程序已退出（实际还在后台优化）。
                 if (!AppConfig.GetBool("TrayHintShown", false))
                 {
                     AppConfig.Set("TrayHintShown", "True");

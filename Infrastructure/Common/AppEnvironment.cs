@@ -1,10 +1,11 @@
 // ============================================================
-// PC Booster v3.6.8
+// PC Booster v3.9.8
+// SPDX-License-Identifier: GPL-3.0-or-later
 // Infrastructure/Common/AppEnvironment.cs
 // 运行环境上下文（权限探测单一事实源）
 // 3.6.7 修复: 原 Program.HasAdminPrivileges 被 Execution/Infrastructure
-//             反向引用，形成 Program ↔ 下层循环依赖；改为基建层持有状态，
-//             Program 仅做写入与转发。
+// 反向引用，形成 Program ↔ 下层循环依赖；改为基建层持有状态，
+// Program 仅做写入与转发。
 // ============================================================
 namespace PCBooster.Infrastructure.Common
 {
@@ -13,7 +14,7 @@ namespace PCBooster.Infrastructure.Common
     {
         private static volatile bool _isElevated;
 
-        /// <summary>★ 3.6.8: 进程启动时刻（UI“运行时间”用；原实现显示的是系统开机时长）</summary>
+        /// <summary>进程启动时刻（UI“运行时间”用；原实现显示的是系统开机时长）</summary>
         public static DateTime StartedAt { get; } = DateTime.Now;
 
         /// <summary>当前进程是否以管理员权限运行（启动期探测一次）</summary>

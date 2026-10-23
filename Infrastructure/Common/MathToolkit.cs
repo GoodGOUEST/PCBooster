@@ -1,8 +1,8 @@
 // ============================================================
-// PC Booster v3.6.8
+// PC Booster v3.9.8
+// SPDX-License-Identifier: GPL-3.0-or-later
 // Infrastructure/Common/MathToolkit.cs
 // 滑动窗口 + 统计计算（泛型窗口 + 静态统计分离，修复 S3）
-// 3.6.7: #6 Stats.Describe 单遍统计（Avg/Max/Min/StdDev 一次遍历）
 // ============================================================
 namespace PCBooster.Infrastructure.Common
 {
@@ -43,7 +43,7 @@ public readonly struct StatSummary
 /// <summary>数值统计（纯静态，无状态）</summary>
 public static class Stats
 {
-    /// <summary>★ 3.6.7: 单遍统计（消除多次 ToList/重复遍历）</summary>
+    /// <summary>单遍统计（消除多次 ToList/重复遍历）</summary>
     public static StatSummary Describe(IEnumerable<double> v)
     {
         var l = v as List<double> ?? v.ToList();

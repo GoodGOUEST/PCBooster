@@ -1,5 +1,6 @@
 // ============================================================
-// PC Booster v3.6.8
+// PC Booster v3.9.8
+// SPDX-License-Identifier: GPL-3.0-or-later
 // Core/StepSkipper.cs
 // 跳过评估（深睡门控 + 降级门控 + 预热/无预测/重载门控）
 // 3.6.8 修复: GetStats 改为真实计数（原为硬编码文案）；重载等级不再预加载
@@ -11,7 +12,7 @@ namespace PCBooster.Core
 /// <summary>步骤跳过评估器</summary>
 public static class StepSkipper
 {
-// ★ 修复: 真实计数器（原 GetStats 返回硬编码字符串）
+// 真实计数器（原 GetStats 返回硬编码字符串）
 private static int _skipAllDeepSleep, _skipAllMinimal;
 private static int _skipPreloadNoWarmup, _skipPreloadEmpty, _skipPreloadHeavy;
 private static int _skipPreloadLowConf;
@@ -30,20 +31,20 @@ if (PowerStateProxy.IsDeepSleep() &&
     {
         if (!CacheManager.IsWarmupCompleted) { _skipPreloadNoWarmup++; return true; }
         if (context.Predictions.Count == 0) { _skipPreloadEmpty++; return true; }
-        // ★ 3.6.8 走查: 前台数据置信度过低（锁屏/安全桌面）时不做预加载
+        // 前台数据置信度过低（锁屏/安全桌面）时不做预加载
         if (context.DataConfidence < 0.2) { _skipPreloadLowConf++; return true; }
-        // ★ 修复: 重载时不再预加载，避免与前台争抢
+        // 重载时不再预加载，避免与前台争抢
         if (context.Level == AdaptiveScheduler.LoadLevel.Heavy) { _skipPreloadHeavy++; return true; }
         return false;
     }
     public static bool ShouldSkipMemory(SchedulerContext context)
     {
-        // ★ 3.6.8: 触发阈值开放给用户（默认可用内存 <60% 才考虑回收）
+        // 触发阈值开放给用户（默认可用内存 <60% 才考虑回收）
         double trigger = AppConfig.GetDouble(ConfigSchema.MemoryReclaimTrigger, Constants.MEMORY_RECLAIM_THRESHOLD);
         if (context.MemoryAvailable > trigger) { _skipMemoryPressure++; return true; }
         return false;
     }
-    /// <summary>★ 3.6.8 走查: 只有开启采集时才存在“冷启动预热期”。
+    /// <summary>只有开启采集时才存在“冷启动预热期”。
     /// 原实现采集关闭时 CollectedMinutes 恒为 0 → 永远算冷启动 → 深睡永不跳过工作。</summary>
     private static bool IsEngineColdStart()
         => AppConfig.EnableDataCollection &&

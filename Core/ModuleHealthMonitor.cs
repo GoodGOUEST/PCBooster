@@ -1,5 +1,6 @@
 // ============================================================
-// PC Booster v3.6.8
+// PC Booster v3.9.8
+// SPDX-License-Identifier: GPL-3.0-or-later
 // Core/ModuleHealthMonitor.cs
 // 模块健康监控（失败计数 + 隔离 + 恢复冷却）
 // ============================================================
@@ -21,7 +22,7 @@ namespace PCBooster.Core
         private static readonly Dictionary<string, HealthRecord> _records = new();
         private static readonly object _lock = new();
 
-        /// <summary>★ 3.6.8: 订阅基建层故障通道（Execution 不反向依赖 Core）</summary>
+        /// <summary>订阅基建层故障通道（Execution 不反向依赖 Core）</summary>
         public static void EnableInfrastructureReporting()
             => Resilience.ModuleFault += RecordFailure;
 
@@ -38,7 +39,7 @@ namespace PCBooster.Core
                     now = r.Status;
                 }
             }
-            // ★ 3.6.8 修复: 恢复也发布事件（原来只有降级才发，UI 看不到恢复）
+            // 恢复也发布事件（原来只有降级才发，UI 看不到恢复）
             if (old != null && old != now)
                 EventBus.Publish(new ModuleHealthChangedEvent(module, now, 0, DateTime.Now, EventBus.NextSeq()));
         }
@@ -57,7 +58,7 @@ namespace PCBooster.Core
                 else if (r.ConsecutiveFailures >= Constants.MODULE_DEGRADED_THRESHOLD)
                     r.Status = "Degraded";
                 now = r.Status;
-                failures = r.ConsecutiveFailures;   // ★ 3.6.8 修复: 原来硬编码传 0
+                failures = r.ConsecutiveFailures;   // 原来硬编码传 0
             }
             if (old != now)
                 EventBus.Publish(new ModuleHealthChangedEvent(module, now, failures, DateTime.Now, EventBus.NextSeq()));

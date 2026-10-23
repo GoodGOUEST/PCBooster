@@ -22,17 +22,9 @@ jobs:
       - name: Restore
         run: dotnet restore PCBooster.csproj
 
-      - name: Build (warnings are fatal)
-        run: dotnet build PCBooster.csproj -c Release --no-restore -warnaserror
-
-      - name: Audit (layering / cycles / dead code)
+      - name: Gate（构建 + 测试 + 空 catch + 分层审计）
         shell: pwsh
-        run: |
-          node scripts/parse_cs3.mjs
-          Start-Sleep -Seconds 2
-          node scripts/audit_report.mjs
-          Start-Sleep -Seconds 3
-          Get-Content audit_report.txt
+        run: ./scripts/gate.ps1
 
       - name: Publish single file
         if: startsWith(github.ref, 'refs/tags/v')

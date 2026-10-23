@@ -1,5 +1,6 @@
 // ============================================================
-// PC Booster v3.6.8
+// PC Booster v3.9.8
+// SPDX-License-Identifier: GPL-3.0-or-later
 // Infrastructure/Common/Events.cs
 // 事件 record 全族集中定义（含 ProcessExitedEvent，修复 X3）
 // 规范: 全部带默认序列号参数，构造点零改动（修复 H1）

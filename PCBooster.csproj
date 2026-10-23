@@ -7,22 +7,45 @@
     <LangVersion>12</LangVersion>
     <Nullable>disable</Nullable>
     <ImplicitUsings>disable</ImplicitUsings>
-    <!-- ★ K5修复: 移除全局 PlatformTarget，避免 ARM64 错靶 -->
+
+    <!-- 显式平台：避免默认 AnyCPU 在 ARM64 上错靶 -->
     <Platforms>x64;ARM64</Platforms>
     <Prefer32Bit>false</Prefer32Bit>
     <RuntimeIdentifiers>win-x64;win-arm64</RuntimeIdentifiers>
     <RootNamespace>PCBooster</RootNamespace>
+
+    <!-- 版本与元数据（唯一事实源：改这里即可，Constants.VERSION 需同步） -->
+    <Version>3.9.8</Version>
+    <AssemblyVersion>3.9.8.0</AssemblyVersion>
+    <FileVersion>3.9.8.0</FileVersion>
     <AssemblyTitle>PC Booster</AssemblyTitle>
-    <Version>3.6.9</Version>
-    <!-- ★ 3.6.8: 本机仅装 .NET 10 运行时；允许 net8.0 产物在更高主版本运行时上启动 -->
+    <Product>PC Booster</Product>
+    <Company>PC Booster contributors</Company>
+    <Copyright>Copyright (c) 2026 PC Booster contributors</Copyright>
+
+    <!-- 允许 net8.0 产物在更高主版本运行时上启动（目标机可能只装了 .NET 10 运行时） -->
     <RollForward>LatestMajor</RollForward>
+
     <ApplicationManifest>app.manifest</ApplicationManifest>
-    <!-- ★ UI 重写: DPI 由 SDK 注入清单，避免手写清单与 SetHighDpiMode 冲突 -->
+    <!-- DPI 由 SDK 注入清单，避免与手写清单 / SetHighDpiMode 冲突 -->
     <ApplicationHighDpiMode>SystemAware</ApplicationHighDpiMode>
+
+    <!-- 生产化：可重现构建 + 警告即错误 -->
+    <Deterministic>true</Deterministic>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="System.Management" Version="8.0.0" />
+  </ItemGroup>
+
+  <!-- 测试工程位于仓库内，主项目不得编译它 -->
+  <ItemGroup>
+    <Compile Remove="tests\**" />
+    <EmbeddedResource Remove="tests\**" />
+    <None Remove="tests\**" />
+    <Page Remove="tests\**" />
   </ItemGroup>
 
 </Project>

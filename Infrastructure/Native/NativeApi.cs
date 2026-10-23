@@ -1,5 +1,6 @@
 // ============================================================
-// PC Booster v3.6.8
+// PC Booster v3.9.8
+// SPDX-License-Identifier: GPL-3.0-or-later
 // Infrastructure/Native/NativeApi.cs
 // ③根治: Lock 只抬下限(max=-1) / 新增 TrimWorkingSet(修剪后解除天花板)
 // + 生命迹象信号 + GUID 标准格式 + volatile→Volatile + IsPidAliveCached
@@ -24,7 +25,7 @@ public static class NativeApi
     private static extern uint WTSGetActiveConsoleSessionId();
     [DllImport("kernel32.dll")]
     private static extern bool GlobalMemoryStatusEx(ref MEMORYSTATUSEX lpBuffer);
-    // ★ 3.6.8: 电池/交流电判定（电池供电时不启用激进睿频）
+    // 电池/交流电判定（电池供电时不启用激进睿频）
     [DllImport("kernel32.dll")]
     private static extern bool GetSystemPowerStatus(out SYSTEM_POWER_STATUS status);
     [StructLayout(LayoutKind.Sequential)]
@@ -38,10 +39,10 @@ public static class NativeApi
         IntPtr root, ref Guid scheme, ref Guid sub, ref Guid setting, uint value);
     [DllImport("powrprof.dll")]
     private static extern uint PowerSetActiveScheme(IntPtr root, ref Guid scheme);
-    // ★ 本轮新增: 没有标准“高性能”方案时，复制当前方案做专用方案
+    // 没有标准“高性能”方案时，复制当前方案做专用方案
     [DllImport("powrprof.dll")]
     private static extern uint PowerDuplicateScheme(IntPtr root, ref Guid src, out IntPtr dest);
-    // ★ 3.6.8: 读取活动方案 / 读取原停泊值 / 释放系统内存
+    // 读取活动方案 / 读取原停泊值 / 释放系统内存
     [DllImport("powrprof.dll")]
     private static extern uint PowerGetActiveScheme(IntPtr root, out IntPtr schemeGuid);
     [DllImport("powrprof.dll")]
@@ -77,7 +78,7 @@ public static class NativeApi
     private static volatile HashSet<int> _wsGrowing = new();
     private static volatile Dictionary<int, long> _prevWs = new();
     private static readonly Dictionary<int, double> _cpuMax30 = new();
-    private static readonly object _cpuLock = new();   // ★ 3.6.8: 保护 _cpuMax30/_lastCpuTime 的读写并发
+    private static readonly object _cpuLock = new();   // 保护 _cpuMax30/_lastCpuTime 的读写并发
     private static DateTime _cpuMax30WindowStart = DateTime.MinValue;
     private static double _cpuUsage;
     private static double _memAvailable = 50;
@@ -94,7 +95,7 @@ public static class NativeApi
         {
             try
             {
-                // ★ 3.6.8 性能: 单遍遍历——TotalProcessorTime 与属性读取共用同一 Process 句柄
+                // 单遍遍历——TotalProcessorTime 与属性读取共用同一 Process 句柄
                 //（原实现：属性一遍 + TotalProcessorTime 一遍 + Top128 又 GetProcessById 重开一遍）
                 var procs = Process.GetProcesses();
                 var snap = new List<ProcessSnapshot>(procs.Length);
@@ -114,12 +115,12 @@ public static class NativeApi
                                 WorkingSet64 = p.WorkingSet64,
                                 PriorityClass = ProcessPriorityClass.Normal
                             };
-                            // ★ 3.6.8 走查: 受保护/提权进程可能拒绝读优先级，
-                            //   原实现因此丢掉整条快照（进程“看不见”）。只降级该字段。
-                            try { entry.PriorityClass = p.PriorityClass; } catch { }
+                            // 受保护/提权进程可能拒绝读优先级，
+                            // 原实现因此丢掉整条快照（进程“看不见”）。只降级该字段。
+                            try { entry.PriorityClass = p.PriorityClass; } catch (System.Exception ex) { PCBooster.Infrastructure.Common.AppLogger.Debug("忽略异常: " + ex.GetType().Name + ": " + ex.Message); }
                             snap.Add(entry);
                         }
-                        catch { }
+                        catch (System.Exception ex) { PCBooster.Infrastructure.Common.AppLogger.Debug("忽略异常: " + ex.GetType().Name + ": " + ex.Message); }
                         // 累计 CPU 时间单独兜底：部分受保护进程会拒绝此查询，
                         // 但不能因它丢失整个快照条目（与原行为一致）
                         try
@@ -131,13 +132,13 @@ public static class NativeApi
                                 procTimes[id] = tp;
                             }
                         }
-                        catch { }
+                        catch (System.Exception ex) { PCBooster.Infrastructure.Common.AppLogger.Debug("忽略异常: " + ex.GetType().Name + ": " + ex.Message); }
                     }
                 }
                 finally
                 {
-                    // ★ 3.6.7 修复：及时释放 Process 句柄（原实现靠终结器兜底）
-                    foreach (var p in procs) { try { p.Dispose(); } catch { } }
+                    // 及时释放 Process 句柄（原实现靠终结器兜底）
+                    foreach (var p in procs) { try { p.Dispose(); } catch (System.Exception ex) { PCBooster.Infrastructure.Common.AppLogger.Debug("忽略异常: " + ex.GetType().Name + ": " + ex.Message); } }
                 }
                 var index = new Dictionary<string, int>(snap.Count);
                 var pidSet = new HashSet<int>(snap.Count);
@@ -169,7 +170,7 @@ public static class NativeApi
                 {
                     foreach (var s in top)
                     {
-                        // ★ 3.6.8 性能: 直接用首遍采集的累计 CPU 时间，不再重开进程句柄
+                        // 直接用首遍采集的累计 CPU 时间，不再重开进程句柄
                         if (!procTimes.TryGetValue(s.Id, out var t)) continue;
                         if (wallMs > 0 && _lastCpuTime.TryGetValue(s.Id, out var prevT))
                             cpu[s.Id] = Math.Clamp((t - prevT).TotalMilliseconds / wallMs * 100, 0, 100);
@@ -229,7 +230,7 @@ public static class NativeApi
         uint now = (uint)Environment.TickCount;
         return (now - lii.dwTime) / 1000.0;
     }
-    // ★ 3.6.8 性能: 进程所属会话号不变，只取一次（原实现每秒新建一个 Process 对象且不释放）
+    // 进程所属会话号不变，只取一次（原实现每秒新建一个 Process 对象且不释放）
     private static uint _cachedSessionId;
     private static bool _sessionIdReady;
     public static bool IsSessionActive()
@@ -242,30 +243,30 @@ public static class NativeApi
                 _cachedSessionId = (uint)self.SessionId;
                 _sessionIdReady = true;   // 仅成功才标记，失败下次重试
             }
-            catch { }
+            catch (System.Exception ex) { PCBooster.Infrastructure.Common.AppLogger.Debug("忽略异常: " + ex.GetType().Name + ": " + ex.Message); }
         }
         uint active = WTSGetActiveConsoleSessionId();
         return active == _cachedSessionId && active != 0xFFFFFFFF;
     }
-    // ★ D1修复: 标准 8-4-4-4-12 官方 GUID
+    // 标准 8-4-4-4-12 官方 GUID
     private static readonly Guid GUID_SCHEME_HIGH = new("8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c");
     private static readonly Guid GUID_SUB_PROCESS = new("54533251-82be-4824-96c1-47b60b740d00");
     private static readonly Guid GUID_PARKING_MIN = new("0cc5b647-c1df-4642-a1c1-d13a4d1b1c5b");
-    // ★ 3.6.8: 游戏电源档（多核低频平台收益明显：提升全核睿频与升频速度）
+    // 游戏电源档（多核低频平台收益明显：提升全核睿频与升频速度）
     private static readonly Guid GUID_PERFBOOSTMODE = new("be337238-0d82-4146-a960-4f3749d470c7");
     private static readonly Guid GUID_PROCTHROTTLEMIN = new("893dee8e-2bef-41e0-89c6-b55d0929964c");
     private static readonly Guid GUID_PROCTHROTTLEMAX = new("bc5038f7-23e0-4960-96da-33abaf5935ec");
     private static readonly Guid GUID_PERFINCTHRESHOLD = new("06cadf0e-64ed-448a-8927-ce7bf90eb35d");
     private static readonly Guid GUID_PERFINCTIME = new("984cf492-3bed-4488-a8f9-4286c97bf5aa");
-    // ★ 3.6.8: 电源基线（按方案分别记录；退出/离开游戏时逐一还原）
+    // 电源基线（按方案分别记录；退出/离开游戏时逐一还原）
     private static Guid _originalScheme;
     private static bool _baselineCaptured;
     private static readonly Dictionary<Guid, uint> _parkingBaseline = new();
-    // ★ 3.6.8: 其他电源设置的原值（方案, 设置项, 原值），离开游戏/退出时逐项还原
+    // 其他电源设置的原值（方案, 设置项, 原值），离开游戏/退出时逐项还原
     private static readonly List<(Guid scheme, Guid setting, uint value)> _settingBaseline = new();
     private static readonly object _powerLock = new();
     private static bool _powerWarned;
-    // ★ R17 黑屏修复: 幂等记账——已写过的停泊值/游戏电源档/是否有脏设置
+    // 黑屏修复: 幂等记账——已写过的停泊值/游戏电源档/是否有脏设置
     private static readonly Dictionary<Guid, int> _parkingWritten = new();
     private static string _lastGamingProfile = "";
     private static bool _settingsDirty;
@@ -274,15 +275,15 @@ public static class NativeApi
         if (RuntimeInformation.ProcessArchitecture == Architecture.Arm64) return;
         lock (_powerLock)
         {
-            // ★ 3.6.8 修复: 原来只写“高性能方案”的值，活动方案是平衡时完全不生效
+            // 原来只写“高性能方案”的值，活动方案是平衡时完全不生效
             var active = GetActiveScheme();
             if (active == Guid.Empty) return;
             EnsureParkingBaselineLocked(active);
             int target = Math.Clamp(percent, 0, 100);
-            // ★ R17 黑屏修复: 值没变就不要再“写 + 重新激活方案”。
-            //   实测日志里短短 9 秒内方案被重新激活 3 次（21:13:00/04/09），
-            //   每次重激活都会把 CPU 电源状态与 DXGI 提交节奏打断一下，
-            //   活动画面上就是一闪/一黑。待命↔活跃/载入阶段来回切正是这个路径。
+            // 黑屏修复: 值没变就不要再“写 + 重新激活方案”。
+            // 实测日志里短短 9 秒内方案被重新激活 3 次（21:13:00/04/09），
+            // 每次重激活都会把 CPU 电源状态与 DXGI 提交节奏打断一下，
+            // 活动画面上就是一闪/一黑。待命↔活跃/载入阶段来回切正是这个路径。
             if (_parkingWritten.TryGetValue(active, out var written) && written == target) return;
             var s = active; var sub = GUID_SUB_PROCESS; var set = GUID_PARKING_MIN;
             uint rc = PowerWriteACValueIndex(IntPtr.Zero, ref s, ref sub, ref set, (uint)target);
@@ -304,8 +305,8 @@ public static class NativeApi
             uint rc = PowerSetActiveScheme(IntPtr.Zero, ref s);
             if (rc == 0) return true;
 
-            // ★ 本轮修复: 部分 OEM/精简系统没有内置“高性能”方案，
-            //   此时复制当前方案生成专用方案，保证锁频真的能生效。
+            // 部分 OEM/精简系统没有内置“高性能”方案，
+            // 此时复制当前方案生成专用方案，保证锁频真的能生效。
             var boost = EnsureBoostSchemeLocked();
             if (boost != Guid.Empty)
             {
@@ -339,7 +340,7 @@ public static class NativeApi
         catch (Exception ex) { AppLogger.Warning($"创建高性能方案失败: {ex.Message}"); }
         return _boostScheme;
     }
-    /// <summary>★ 3.6.8: 游戏电源档——Boost=aggressive、最小/最大处理器状态=100%、
+    /// <summary>游戏电源档——Boost=aggressive、最小/最大处理器状态=100%、
     /// 升频阈值 10 / 升频步进 1（低主频多核平台可减少“卡在低频”的时间）。
     /// 仅在接通电源时启用；所有原值记录后由 RestoreOriginalScheme 还原。</summary>
     public static void ApplyGamingPowerProfile()
@@ -349,8 +350,8 @@ public static class NativeApi
         {
             var active = GetActiveScheme();
             if (active == Guid.Empty) return;
-            // ★ R17 黑屏修复: 同一个方案上重复写 5 项 + 重激活是纯振荡源。
-            //   已写过就跳过（退出/恢复时会把指纹清空，下次进游戏会重写）。
+            // 黑屏修复: 同一个方案上重复写 5 项 + 重激活是纯振荡源。
+            // 已写过就跳过（退出/恢复时会把指纹清空，下次进游戏会重写）。
             string fingerprint = active.ToString() + "|ac";
             if (_lastGamingProfile == fingerprint) return;
             EnsureParkingBaselineLocked(active);
@@ -374,19 +375,19 @@ public static class NativeApi
         uint rc = PowerWriteACValueIndex(IntPtr.Zero, ref s, ref sub, ref st, value);
         if (rc != 0) WarnPowerOnceLocked($"电源设置写入失败({setting.ToString()[..8]}) HRESULT=0x{rc:X8}");
     }
-    /// <summary>★ 3.6.8: 是否接通电源（电池供电时不启用激进睿频）</summary>
+    /// <summary>是否接通电源（电池供电时不启用激进睿频）</summary>
     public static bool IsOnAcPower()
     {
         try
         {
             if (GetSystemPowerStatus(out var s)) return s.ACLineStatus != 0;
         }
-        catch { }
-        // ★ 本轮修复: 查询失败时按“电池”处理（保守），
-        //   否则会在笔记本上写激进电源档（正是 P0-2 永久副作用的入口）
+        catch (System.Exception ex) { PCBooster.Infrastructure.Common.AppLogger.Debug("忽略异常: " + ex.GetType().Name + ": " + ex.Message); }
+        // 查询失败时按“电池”处理（保守），
+        // 否则会在笔记本上写激进电源档（正是 P0-2 永久副作用的入口）
         return false;
     }
-    /// <summary>★ 3.6.8: 读取当前活动电源方案（失败返回空 Guid）</summary>
+    /// <summary>读取当前活动电源方案（失败返回空 Guid）</summary>
     public static Guid GetActiveScheme()
     {
         try
@@ -398,10 +399,10 @@ public static class NativeApi
                 return g;
             }
         }
-        catch { }
+        catch (System.Exception ex) { PCBooster.Infrastructure.Common.AppLogger.Debug("忽略异常: " + ex.GetType().Name + ": " + ex.Message); }
         return Guid.Empty;
     }
-    /// <summary>★ 本轮新增: 已为人识别的活动电源方案名称（供 UI 直接展示）</summary>
+    /// <summary>已为人识别的活动电源方案名称（供 UI 直接展示）</summary>
     public static string GetActiveSchemeName()
     {
         try
@@ -416,7 +417,7 @@ public static class NativeApi
         catch { return "未知"; }
     }
 
-    /// <summary>★ 3.6.8: 首次改动某方案前记录它的核心停泊原值</summary>
+    /// <summary>首次改动某方案前记录它的核心停泊原值</summary>
     private static void EnsureParkingBaselineLocked(Guid scheme)
     {
         if (scheme == Guid.Empty || _parkingBaseline.ContainsKey(scheme)) return;
@@ -427,7 +428,7 @@ public static class NativeApi
         _baselineCaptured = true;
         AppLogger.Info($"🔌 电源基线已记录（停泊={v}%）");
     }
-    /// <summary>★ 3.6.8: 把当前方案的核心停泊值恢复为“原始基线”。
+    /// <summary>把当前方案的核心停泊值恢复为“原始基线”。
     /// 待命/深睡结束回到活跃状态时用，避免固定写 100% 反而偏离用户原策略。</summary>
     public static void RestoreParkingBaseline()
     {
@@ -436,7 +437,7 @@ public static class NativeApi
             var active = GetActiveScheme();
             if (active == Guid.Empty) return;
             if (!_parkingBaseline.TryGetValue(active, out var v)) return;
-            // ★ R17: 没改过 / 已经是基线值 → 不再写+重激活
+            // 没改过 / 已经是基线值 → 不再写+重激活
             if (!_parkingWritten.TryGetValue(active, out var written) || written == v) return;
             var s = active; var sub = GUID_SUB_PROCESS; var set = GUID_PARKING_MIN;
             uint rc = PowerWriteACValueIndex(IntPtr.Zero, ref s, ref sub, ref set, v);
@@ -445,13 +446,13 @@ public static class NativeApi
             PowerSetActiveScheme(IntPtr.Zero, ref s);
         }
     }
-    /// <summary>★ 3.6.8: 只恢复电源方案与停泊值，保留基线（供下次场景锁定复用）。
+    /// <summary>只恢复电源方案与停泊值，保留基线（供下次场景锁定复用）。
     /// 离开游戏场景时调用，否则机器会一直停留在“高性能”方案直到退出程序。</summary>
     public static void RestoreOriginalScheme()
     {
         lock (_powerLock) RestorePowerLocked(keepBaseline: true);
     }
-    /// <summary>★ 3.6.8: 退出还原——所有被改过的方案写回原停泊值 + 恢复原电源方案</summary>
+    /// <summary>退出还原——所有被改过的方案写回原停泊值 + 恢复原电源方案</summary>
     public static void RestorePowerSettings()
     {
         lock (_powerLock) RestorePowerLocked(keepBaseline: false);
@@ -460,11 +461,11 @@ public static class NativeApi
     {
         try
         {
-            // ★ 本轮修复: 原方案还原不能再被“基线未捕获”拦住（停泊值读不到时以前就直接 return，
-            //   导致程序退出后系统永远停在高性能方案）。
+            // 原方案还原不能再被“基线未捕获”拦住（停泊值读不到时以前就直接 return，
+            // 导致程序退出后系统永远停在高性能方案）。
             if (_originalScheme != Guid.Empty)
             {
-                // ★ R17: 已经是原方案就不要重复激活
+                // 已经是原方案就不要重复激活
                 if (GetActiveScheme() != _originalScheme)
                 {
                     var s = _originalScheme;
@@ -473,15 +474,15 @@ public static class NativeApi
                 }
             }
             if (!_baselineCaptured) return;
-            // ★ R17 黑屏/卡顿修复: 没有脏设置就不重复写 10+ 项电源项。
-            //   原来每次“离开游戏 + 待命/唤醒”都会全量重写并重激活一次。
+            // 黑屏/卡顿修复: 没有脏设置就不重复写 10+ 项电源项。
+            // 原来每次“离开游戏 + 待命/唤醒”都会全量重写并重激活一次。
             if (!_settingsDirty)
             {
                 if (!keepBaseline) { _parkingBaseline.Clear(); _settingBaseline.Clear(); _baselineCaptured = false; }
                 return;
             }
-            // ★ 本轮修复: 游戏电源档（睿频/处理器最小最大状态/升频阈值）以前只记不还，
-            //   退出游戏后用户方案被永久改成激进值（发热/耗电/续航下降）。
+            // 游戏电源档（睿频/处理器最小最大状态/升频阈值）以前只记不还，
+            // 退出游戏后用户方案被永久改成激进值（发热/耗电/续航下降）。
             foreach (var item in _settingBaseline)
             {
                 var ss = item.scheme; var ssub = GUID_SUB_PROCESS; var sset = item.setting;
@@ -515,7 +516,7 @@ public static class NativeApi
             {
                 var path = p.MainModule?.FileName;
                 if (string.IsNullOrEmpty(path)) return false;
-                // ★ 3.6.8: 只触碰前 8MB（原 100MB，磁盘代价远大于收益）+ 顺序扫描提示
+                // 只触碰前 8MB（原 100MB，磁盘代价远大于收益）+ 顺序扫描提示
                 using var fs = new FileStream(path, FileMode.Open, FileAccess.Read,
                     FileShare.ReadWrite | FileShare.Delete, 64 * 1024, FileOptions.SequentialScan);
                 var buffer = new byte[64 * 1024];
@@ -528,7 +529,7 @@ public static class NativeApi
             catch { return false; }
         }, false);
     }
-    /// <summary>★ ③根治: 只抬驻留下限，max=-1 永不设天花板</summary>
+    /// <summary>③根治: 只抬驻留下限，max=-1 永不设天花板</summary>
     public static bool LockProcessMemory(int pid)
     {
         return ProcessSafeHelper.WithProcess(pid, p =>
@@ -541,7 +542,7 @@ public static class NativeApi
             catch { return false; }
         }, false);
     }
-    /// <summary>★ 本轮新增: 释放工作集下限（恢复系统默认 min/max）
+    /// <summary>释放工作集下限（恢复系统默认 min/max）
     /// 旧版只有 LockProcessMemory，关掉“工作集下限锁定”后已锁进程的下限会留到进程退出。</summary>
     public static bool ReleaseWorkingSetFloor(int pid)
     {
@@ -552,7 +553,7 @@ public static class NativeApi
         }, false);
     }
 
-    /// <summary>★ 温和修剪后立即解除天花板</summary>
+    /// <summary>温和修剪后立即解除天花板</summary>
     public static bool TrimWorkingSet(int pid, long targetBytes)
     {
         return ProcessSafeHelper.WithProcess(pid, p =>

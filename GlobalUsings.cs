@@ -1,5 +1,6 @@
 // ============================================================
-// PC Booster v3.6.8
+// PC Booster v3.9.8
+// SPDX-License-Identifier: GPL-3.0-or-later
 // GlobalUsings.cs
 // 全局 using 单一事实源策略：仅注入无冲突系统命名空间
 // 项目命名空间一律显式 using（防跨层歧义 / Timer 歧义）

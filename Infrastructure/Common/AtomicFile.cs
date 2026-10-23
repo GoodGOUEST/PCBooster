@@ -1,5 +1,6 @@
 // ============================================================
-// PC Booster v3.6.8
+// PC Booster v3.9.8
+// SPDX-License-Identifier: GPL-3.0-or-later
 // Infrastructure/Common/AtomicFile.cs
 // 原子写工具（tmp + Move 覆盖，#7 工具批单一实现）
 // ============================================================

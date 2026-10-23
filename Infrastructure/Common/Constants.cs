@@ -1,5 +1,6 @@
 // ============================================================
-// PC Booster v3.6.8
+// PC Booster v3.9.8
+// SPDX-License-Identifier: GPL-3.0-or-later
 // Infrastructure/Common/Constants.cs
 // 不可变系统常量 + 3.6.7 硬编码治理具名化（单一事实源）
 // ============================================================
@@ -9,7 +10,7 @@ namespace PCBooster.Infrastructure.Common
 public static class Constants
 {
 // ═══════════ 基础 ═══════════
-public const string VERSION = "3.6.9";
+public const string VERSION = "3.9.8";
 public const string MUTEX_NAME = @"Local\PCBooster_SingleInstance";
     public const string FILE_CONFIG = "config.ini";
     public const string FILE_RULES = "rules.json";
@@ -25,13 +26,13 @@ public const string MUTEX_NAME = @"Local\PCBooster_SingleInstance";
     public const int SLOW_HEARTBEAT_MS = 10000;
     // ═══════════ 缓存 ═══════════
     public const double PREDICTION_CACHE_SECONDS = 5.0;
-    public const double SNAPSHOT_CACHE_SECONDS = 3.0;   // ★ 3.6.8: 2s→3s，降低自身全进程枚举开销
+    public const double SNAPSHOT_CACHE_SECONDS = 3.0;   // 2s→3s，降低自身全进程枚举开销
     public const double LOAD_CACHE_SECONDS = 2.0;
     // ═══════════ 负载分级 ═══════════
     public const double CPU_IDLE_THRESHOLD = 20;
     public const double CPU_LIGHT_THRESHOLD = 40;
     public const double CPU_MODERATE_THRESHOLD = 60;
-    /// <summary>★ 3.6.8: 负载分级滞回（百分点），避免阈值附近每 2 秒抖动</summary>
+    /// <summary>负载分级滞回（百分点），避免阈值附近每 2 秒抖动</summary>
     public const double LOAD_LEVEL_HYSTERESIS = 5;
     // ═══════════ 内存回收 ═══════════
     public const double MEMORY_RECLAIM_THRESHOLD = 60;
@@ -39,7 +40,7 @@ public const string MUTEX_NAME = @"Local\PCBooster_SingleInstance";
     public const int PRELOAD_MAX_CONCURRENT = 3;
     public const double PRELOAD_MIN_THRESHOLD = 0.30;
     public const double PRELOAD_MAX_THRESHOLD = 0.75;
-    // ★ 3.6.8: 自适应阈值（命中率低→升、高→降）——替代原“只升不降”的棘轮
+    // 自适应阈值（命中率低→升、高→降）——替代原“只升不降”的棘轮
     public const double THRESHOLD_STEP = 0.01;
     public const int FEEDBACK_WINDOW_SAMPLES = 40;
     public const double FEEDBACK_LOW_HIT_RATE = 0.40;
@@ -58,15 +59,15 @@ public const string MUTEX_NAME = @"Local\PCBooster_SingleInstance";
     public const double NECESSITY_BOOST_STEP = 0.1;
     public const double NECESSITY_DECAY_FACTOR = 0.9;
     public const double NECESSITY_SKIP_THRESHOLD = 0.15;
-    /// <summary>★ 3.6.8: 必要性分数回收间隔（防止“一次表现差 → 永久停用”）</summary>
+    /// <summary>必要性分数回收间隔（防止“一次表现差 → 永久停用”）</summary>
     public const int NECESSITY_RECOVERY_INTERVAL_SECONDS = 900;
-    /// <summary>★ 3.6.8: 每次回收向 0.5 拉回的比例（给被停用的决策重新试错机会）</summary>
+    /// <summary>每次回收向 0.5 拉回的比例（给被停用的决策重新试错机会）</summary>
     public const double NECESSITY_RECOVERY_PULL = 0.2;
     // ═══════════ 置信度 ═══════════
     public const double CONFIDENCE_MIN = 0.05;
     public const double CONFIDENCE_MAX = 1.0;
     public const double CONFIDENCE_HIT_BONUS = 0.06;
-    public const double CONFIDENCE_MISS_PENALTY = 0.03;   // ★ 3.6.8: 原 0.08 使均衡点高达 61.5%，现降为 33%
+    public const double CONFIDENCE_MISS_PENALTY = 0.03;   // 原 0.08 使均衡点高达 61.5%，现降为 33%
     public const double CONFIDENCE_DECAY_NORMAL = 0.98;
     public const double CONFIDENCE_DECAY_HIGH_HIT = 0.995;
     public const double CONFIDENCE_DECAY_LOW_HIT = 0.95;
@@ -84,9 +85,9 @@ public const string MUTEX_NAME = @"Local\PCBooster_SingleInstance";
     public const int PROFILER_SAMPLE_EVERY_N_CYCLES = 30;
     // ═══════════ 场景 ═══════════
     public const string SCENE_GAMING = "gaming";
-    // ★ 本轮新增: 游戏在后台（已启动但前台是其他程序）——保留隔离、释放锁频
+    // 游戏在后台（已启动但前台是其他程序）——保留隔离、释放锁频
     public const string SCENE_GAMING_BACKGROUND = "gaming-bg";
-    // ★ 本轮新增: 影音场景（只关核心停泊，不锁频）
+    // 影音场景（只关核心停泊，不锁频）
     public const string SCENE_VIDEO = "video";
     public const string SCENE_DESIGN = "design";
     public const string SCENE_DEVELOPMENT = "development";
@@ -95,7 +96,7 @@ public const string MUTEX_NAME = @"Local\PCBooster_SingleInstance";
     public const string SCENE_BROWSING = "browsing";
     public const string SCENE_GENERAL = "general";
     
-    // ★ 3.6.7 核心隔离适用场景（高算力/低延迟敏感：游戏/设计/开发）
+    // 核心隔离适用场景（高算力/低延迟敏感：游戏/设计/开发）
     public static readonly HashSet<string> ISOLATION_SCENES = new(StringComparer.OrdinalIgnoreCase)
     {
         SCENE_GAMING, SCENE_GAMING_BACKGROUND, SCENE_DESIGN, SCENE_DEVELOPMENT
@@ -106,13 +107,13 @@ public const string MUTEX_NAME = @"Local\PCBooster_SingleInstance";
     public const int CORE_PARKING_DEEP_SLEEP = 20;
     public const double LIGHT_STANDBY_TIMEOUT_SECONDS = 30;
     public const double DEEP_SLEEP_TIMEOUT_SECONDS = 180;
-    // ★ 3.6.9: 离开游戏的去抖延迟（秒）。全屏游戏在切换显示模式/短暂掉前台时，
-    //   场景会在 gaming ↔ gaming-bg 之间抖动；旧版每次抖动都切一次电源方案
-    //   （高性能↔原方案 + 写 5 个电源项），实测 9 秒内切了 2 轮，
-    //   会打断 GPU 提交节奏（日志同时出现 nvlddmkm 153），用户看到的就是“跳闪/黑屏”。
-    //   现在离开游戏后先等这个宽限期，期间回到游戏就取消恢复。
+    // 离开游戏的去抖延迟（秒）。全屏游戏在切换显示模式/短暂掉前台时，
+    // 场景会在 gaming ↔ gaming-bg 之间抖动；旧版每次抖动都切一次电源方案
+    // （高性能↔原方案 + 写 5 个电源项），实测 9 秒内切了 2 轮，
+    // 会打断 GPU 提交节奏（日志同时出现 nvlddmkm 153），用户看到的就是“跳闪/黑屏”。
+    // 现在离开游戏后先等这个宽限期，期间回到游戏就取消恢复。
     public const int GAMING_EXIT_POWER_RESTORE_DELAY_SECONDS = 20;
-    // ═══════════ R17 黑屏/卡死防护（防电源与亲和性振荡）═══════════
+    // ═══════════ 黑屏/卡死防护（防电源与亲和性振荡）═══════════
     /// <summary>进入游戏场景后需稳定这么久才真正锁频。
     /// 全屏游戏切换显示模式时 gaming↔gaming-bg 会秒级抖动，抖动期间锁频就是闪屏/黑屏的源头。</summary>
     public const int FREQ_LOCK_STABLE_SECONDS = 3;
@@ -131,23 +132,23 @@ public const string MUTEX_NAME = @"Local\PCBooster_SingleInstance";
     // ═══════════ 学习 ═══════════
     public const double IDLE_CHECK_INTERVAL_SECONDS = 300;
     public const double IDLE_CPU_THRESHOLD = 15;
-    // ★ 3.6.8: 系统级活动门控（挂机编译/渲染/下载时不再降核）
+    // 系统级活动门控（挂机编译/渲染/下载时不再降核）
     public const double DEEP_SLEEP_CPU_GUARD = 15;
     public const double LEARNING_QUALITY_THRESHOLD = 0.7;
-    public const double PREDICTION_WINDOW_SECONDS = 120;   // ★ 3.6.8: 30s→120s（切窗口间隔普遍超过 30s）
+    public const double PREDICTION_WINDOW_SECONDS = 120;   // 30s→120s（切窗口间隔普遍超过 30s）
     // ═══════════ Job ═══════════
     public const double AUTOJOB_MEM_TRIGGER = 40;
     public const int AUTOJOB_MAX_TARGETS = 3;
     public const long AUTOJOB_MIN_WORKING_SET_MB = 256;
-    // ★ 3.6.8: 单进程“吃满一个核”判据（原整机 70% 在 8 核机上永不触发）
+    // 单进程“吃满一个核”判据（原整机 70% 在 8 核机上永不触发）
     public const double AUTOJOB_HOG_CPU = 60;
     public const int AUTOJOB_HOG_STREAK = 3;
-    /// <summary>★ 3.6.8: 刚切到后台不久的进程不施加 Job 限制（避免“切个窗口就被限速/被杀”）</summary>
+    /// <summary>刚切到后台不久的进程不施加 Job 限制（避免“切个窗口就被限速/被杀”）</summary>
     public const int AUTOJOB_RECENT_FG_SECONDS = 300;
-    // ★ 3.6.8: 游戏场景激进档（后台抢资源容忍度更低）
+    // 游戏场景激进档（后台抢资源容忍度更低）
     public const double AUTOJOB_HOG_CPU_GAME = 40;
     public const int AUTOJOB_MAX_TARGETS_GAME = 6;
-    // ═══════════ R17 日常模式保护（WorkloadGuard）═══════════
+    // ═══════════ 日常模式保护（WorkloadGuard）═══════════
     /// <summary>编译工具链收尾保护窗口。链接/落盘在进程退出后仍在进行，
     /// 这段时间内既不限速也不修剪，避免“编译完成瞬间卡一下”。</summary>
     public const int WORKGUARD_BUILD_TAIL_SECONDS = 30;
@@ -174,8 +175,8 @@ public const string MUTEX_NAME = @"Local\PCBooster_SingleInstance";
     public const int SANITIZE_MAX_LENGTH = 64;
     public const double RUN_MINUTES_PER_TICK = FAST_HEARTBEAT_MS / 60000.0;
     public const double WEIGHT_HOURLY = 0.12;
-public const double WEIGHT_WEEKDAY = 0.05;   // ★ 3.6.8: 从 HOURLY 分出周维度权重（总分保持 1.0）
-    // ★ 3.6.8: 新增“前台使用”权重——原来只学启动事件，与用户“切窗口”的主要行为错位
+public const double WEIGHT_WEEKDAY = 0.05;   // 从 HOURLY 分出周维度权重（总分保持 1.0）
+    // 新增“前台使用”权重——原来只学启动事件，与用户“切窗口”的主要行为错位
     public const double WEIGHT_FOREGROUND = 0.15;
     /// <summary>前台占比放大系数（占比 50% 即得满分 1.0）</summary>
     public const double FG_SHARE_GAIN = 2.0;
@@ -196,11 +197,11 @@ public const double WEIGHT_WEEKDAY = 0.05;   // ★ 3.6.8: 从 HOURLY 分出周�
     public const double PATTERN_OCCURRENCE_DIVISOR = 30;
     public const int FEEDBACK_HIGH_HIT_MIN_HITS = 10;
     public const double FEEDBACK_HIGH_HIT_MISS_RATIO = 0.2;
-    // ★ 3.6.8: FEEDBACK_THRESHOLD_STEP 已移除（阈值改由 THRESHOLD_STEP 双向自适应）
+    // FEEDBACK_THRESHOLD_STEP 已移除（阈值改由 THRESHOLD_STEP 双向自适应）
     public const double WAKE_CONFIDENCE_THRESHOLD = 0.75;
     public const double IDLE_MEMORY_THRESHOLD = 30;
     public const double SKIP_HIGH_CONFIDENCE = 0.80;
-    public const int COLD_START_MINUTES = 60;   // ★ 3.6.8: 改为“有效采集分钟数”（原 COLD_START_SAMPLES=100 实际只扛 2 秒）
+    public const int COLD_START_MINUTES = 60;   // 改为“有效采集分钟数”（原 COLD_START_SAMPLES=100 实际只扛 2 秒）
     public const double DEGRADE_MIN_CONFIDENCE = 0.2;
     public const double DEGRADE_HEALTHY_RATIO = 0.5;
     public const double DEGRADE_DECENT_CONFIDENCE = 0.3;
@@ -208,14 +209,14 @@ public const double WEIGHT_WEEKDAY = 0.05;   // ★ 3.6.8: 从 HOURLY 分出周�
     public const double PROTECTION_CONFIDENCE_BASE = 0.5;
     public const double CACHE_CLEANUP_INTERVAL_SECONDS = 30;
     public const int GAME_CORE_DIVISOR = 2;
-    /// <summary>★ 3.6.8: 多核低频（Xeon E5 等）判定阈值（物理核）</summary>
+    /// <summary>多核低频（Xeon E5 等）判定阈值（物理核）</summary>
     public const int MANYCORE_PHYSICAL_THRESHOLD = 12;
-    /// <summary>★ 3.6.8: 多核低频平台的游戏核心数下限/上限（物理核）</summary>
+    /// <summary>多核低频平台的游戏核心数下限/上限（物理核）</summary>
     public const int MANYCORE_GAME_CORES_MIN = 4;
     public const int MANYCORE_GAME_CORES_MAX = 8;
     public const double CACHE_FAULT_SCALE = 100;
-    // ★ R17: CACHE_OPTIMAL_CORE_COUNT 已删除——缓存敏感不再“只留 2 个物理核”，
-    //   改为“限制在同一 L3 域内”（见 CacheAwareScheduler.GetCacheOptimalMask）。
+    // CACHE_OPTIMAL_CORE_COUNT 已删除——缓存敏感不再“只留 2 个物理核”，
+    // 改为“限制在同一 L3 域内”（见 CacheAwareScheduler.GetCacheOptimalMask）。
     public const int LEARN_RULE_MIN_OCCURRENCES = 5;
     public const int LEARN_RULE_PRIORITY = 3;
     public const int MODULE_SLEEP_PRIORITY_LIGHT = 5;
@@ -238,7 +239,7 @@ public const double WEIGHT_WEEKDAY = 0.05;   // ★ 3.6.8: 从 HOURLY 分出周�
     public const int RECLAIM_LIMIT_EMERGENCY = 8;
     public const int RECLAIM_COOLDOWN_SECONDS = 180;
     public const int RECLAIM_COOLDOWN_EMERGENCY_SECONDS = 60;
-    public const int RECLAIM_RECENT_FG_SECONDS = 1800;   // ★ 3.6.8: 5min→30min，刚用过的程序不再被修剪
+    public const int RECLAIM_RECENT_FG_SECONDS = 1800;   // 5min→30min，刚用过的程序不再被修剪
     public const int RECLAIM_TRIM_INTERVAL_MS = 30;
     public const double RECLAIM_TRIM_RETENTION_MINUTES = 10;
     // UI

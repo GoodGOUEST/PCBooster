@@ -1,5 +1,6 @@
 // ============================================================
-// PC Booster v3.6.8
+// PC Booster v3.9.8
+// SPDX-License-Identifier: GPL-3.0-or-later
 // Execution/Jobs/AutoJobManager.cs
 // ②根治: -1→0（不写该限制），删除隐式 50/2048 回退帽；已限制跳过；清理无条件化
 // ============================================================
@@ -16,20 +17,20 @@ private static int _isApplying;
 private static int _totalApplied;
 private static readonly HashSet<int> _jobProtectedPids = new();
 private static readonly object _jobLock = new();
-// ★ 3.6.8 修复: 施加失败冷却（避免每轮重复尝试同 PID 刷日志）
+// 施加失败冷却（避免每轮重复尝试同 PID 刷日志）
 private static readonly Dictionary<int, DateTime> _failUntil = new();
 private static readonly object _failCoolLock = new();
-// ★ 3.6.8: 前台观测表——刚切到后台的进程不施加限制
+// 前台观测表——刚切到后台的进程不施加限制
 private static readonly Dictionary<int, DateTime> _fgSeen = new();
 private static readonly object _fgLock = new();
-// ★ 3.6.8: 单进程吃满一个核的连续计数（滞回）
+// 单进程吃满一个核的连续计数（滞回）
 private static readonly Dictionary<int, int> _hogStreak = new();
 private static readonly object _hogLock = new();
-/// <summary>★ 3.6.8: 当前被自动限速的进程数（UI 展示用）</summary>
+/// <summary>当前被自动限速的进程数（UI 展示用）</summary>
 public static int AutoLimitedCount { get { lock (_jobLock) return _jobProtectedPids.Count; } }
     public static void CheckAndApplyJobs(SchedulerContext context)
     {
-        JobObjectApi.CleanupExitedProcesses(); // ★ 无条件清理
+        JobObjectApi.CleanupExitedProcesses(); // 无条件清理
         CleanupDeadProtectedPids();
         if (!AppConfig.EnableAutoJob) return;
         if (!Resilience.TryAcquire(ref _isApplying)) return;
@@ -38,17 +39,17 @@ public static int AutoLimitedCount { get { lock (_jobLock) return _jobProtectedP
             var (cpu, mem) = Infrastructure.Cache.CacheManager.GetSystemState();
             var procs = NativeApi.GetSnapshotCached();
             int fgPid = context?.ForegroundPid ?? 0;
-            // ★ 3.6.8: 记录前台并立即解除它身上的 Job 限制（切回应用要马上恢复流畅）
+            // 记录前台并立即解除它身上的 Job 限制（切回应用要马上恢复流畅）
             TrackForeground(fgPid);
-            // ★ 3.6.8: 游戏场景采用更激进的后台限速档
+            // 游戏场景采用更激进的后台限速档
             bool gaming = string.Equals(context?.Scene, Constants.SCENE_GAMING, StringComparison.OrdinalIgnoreCase);
-            // ★ 3.6.8 修复: 判据由“整机 CPU 70%”改为“单进程持续吃满一个核”
+            // 判据由“整机 CPU 70%”改为“单进程持续吃满一个核”
             //（8 核机器上一个后台进程吃满单核只有 12.5%，旧判据永不触发）
             int hogs = CountHogs(procs, fgPid, gaming ? Constants.AUTOJOB_HOG_CPU_GAME : Constants.AUTOJOB_HOG_CPU);
             bool overLoad = hogs > 0 || mem <= Constants.AUTOJOB_MEM_TRIGGER;
             if (!overLoad)
             {
-                // ★ 3.6.8 修复: 负载回落后解除已施加的限制（带滞回，避免临界抖动）
+                // 负载回落后解除已施加的限制（带滞回，避免临界抖动）
                 if (cpu <= Constants.AUTOJOB_RELEASE_CPU && mem >= Constants.AUTOJOB_RELEASE_MEM)
                     ReleaseAllAutoLimits();
                 return;
@@ -67,7 +68,7 @@ public static int AutoLimitedCount { get { lock (_jobLock) return _jobProtectedP
         }
         finally { Resilience.Release(ref _isApplying); }
     }
-    /// <summary>★ 3.6.8: 统计“持续吃满一个核”的进程数（GetProcessCpuCached 口径为 0~100 = 一个核）</summary>
+    /// <summary>统计“持续吃满一个核”的进程数（GetProcessCpuCached 口径为 0~100 = 一个核）</summary>
     private static int CountHogs(NativeApi.ProcessSnapshot[] procs, int foregroundPid, double hogCpu)
     {
         int count = 0;
@@ -76,8 +77,8 @@ public static int AutoLimitedCount { get { lock (_jobLock) return _jobProtectedP
             if (p.Id <= 0 || p.Id == foregroundPid) continue;
             if (string.IsNullOrEmpty(p.ProcessName)) continue;
             if (ProcessMatcher.IsSystemProcess(p.ProcessName)) continue;
-            // ★ R17.3: 编译器吃满一个核是正常工作，不能算“后台抢占”，
-            //   否则一编译就触发全局限速风暴，把后台/其它工具链一起压下去。
+            // 编译器吃满一个核是正常工作，不能算“后台抢占”，
+            // 否则一编译就触发全局限速风暴，把后台/其它工具链一起压下去。
             if (ProcessMatcher.IsBuildTool(p.ProcessName)) continue;
             double pc = NativeApi.GetProcessCpuCached(p.Id);
             if (pc < hogCpu)
@@ -94,8 +95,8 @@ public static int AutoLimitedCount { get { lock (_jobLock) return _jobProtectedP
             }
             if (streak >= Constants.AUTOJOB_HOG_STREAK) count++;
         }
-        // ★ 本轮修复: 以 PID 为键的三张表以前只增不减，长跑（挂机/几天不关）会缓慢增长，
-        //   PID 复用后旧状态还会误判。超过 512 条时按“当前快照里不存在的 PID”清理。
+        // 以 PID 为键的三张表以前只增不减，长跑（挂机/几天不关）会缓慢增长，
+        // PID 复用后旧状态还会误判。超过 512 条时按“当前快照里不存在的 PID”清理。
         if (_hogStreak.Count > 512 || _failUntil.Count > 512 || _fgSeen.Count > 512)
             PruneState(procs);
         return count;
@@ -121,19 +122,19 @@ public static int AutoLimitedCount { get { lock (_jobLock) return _jobProtectedP
         {
             if (string.IsNullOrEmpty(p.ProcessName)) continue;
             if (ProcessMatcher.IsSystemProcess(p.ProcessName)) continue;
-            if (ProcessMatcher.IsProtected(p.ProcessName)) continue;   // ★ 3.6.8 红线: 反作弊绝不施加 Job
+            if (ProcessMatcher.IsProtected(p.ProcessName)) continue;   // 红线: 反作弊绝不施加 Job
             if (p.Id == foregroundPid) continue;
-            // ★ 3.6.8: 用户交互类（浏览器/Office/开发/会议/设计）不做 Job 限速
+            // 用户交互类（浏览器/Office/开发/会议/设计）不做 Job 限速
             if (IsUserFacing(p.ProcessName)) continue;
-            // ★ R17 游戏卡死修复: 有可见窗口的程序（含未被目录识别的游戏/客户端）一律不限速。
-            //   实测日志里 Games / PlatformProcess 被反复施加 Job CPU 限制，
-            //   一旦命中游戏主进程，就是“卡住/黑屏”级后果。
+            // 游戏卡死修复: 有可见窗口的程序（含未被目录识别的游戏/客户端）一律不限速。
+            // 实测日志里 Games / PlatformProcess 被反复施加 Job CPU 限制，
+            // 一旦命中游戏主进程，就是“卡住/黑屏”级后果。
             if (ProcessSafeHelper.HasVisibleWindow(p.Id)) continue;
-            // ★ 3.6.8: 刚切到后台 5 分钟内的进程不碰（避免“临时切后台就被限速”）
+            // 刚切到后台 5 分钟内的进程不碰（避免“临时切后台就被限速”）
             if (WasRecentlyForeground(p.Id)) continue;
             if (Preload.PreloadProtection.IsProtected(p.Id)) continue;
             if (IsJobProtected(p.Id)) continue;
-            // ★ R17.3: 编译期/办公保护窗口内不施加 Job 限速
+            // 编译期/办公保护窗口内不施加 Job 限速
             if (Work.WorkloadGuard.IsJobExempt(p.Id, p.ProcessName)) continue;
             var strategy = IntelligenceEngine.GetStrategy(p.ProcessName);
             if (strategy.JobCpuLimit == -1 && strategy.JobMemoryLimitMB == -1) continue;
@@ -145,8 +146,8 @@ public static int AutoLimitedCount { get { lock (_jobLock) return _jobProtectedP
     private static void ApplyJobLimits(NativeApi.ProcessSnapshot p)
     {
         var strategy = IntelligenceEngine.GetStrategy(p.ProcessName);
-        int cpuLimit = strategy.JobCpuLimit > 0 ? strategy.JobCpuLimit : 0;   // ★ ②
-        int memLimit = strategy.JobMemoryLimitMB > 0 ? strategy.JobMemoryLimitMB : 0; // ★ ②
+        int cpuLimit = strategy.JobCpuLimit > 0 ? strategy.JobCpuLimit : 0;   // ②
+        int memLimit = strategy.JobMemoryLimitMB > 0 ? strategy.JobMemoryLimitMB : 0; // ②
         if (cpuLimit == 0 && memLimit == 0) return;
         lock (_failCoolLock)
             if (_failUntil.TryGetValue(p.Id, out var until) && until > DateTime.Now) return;
@@ -164,7 +165,7 @@ public static int AutoLimitedCount { get { lock (_jobLock) return _jobProtectedP
         }
         else
         {
-            // ★ 3.6.8: 失败进入冷却（多为进程已在其他 Job 中，Windows 限制嵌套）
+            // 失败进入冷却（多为进程已在其他 Job 中，Windows 限制嵌套）
             lock (_failCoolLock) _failUntil[p.Id] = DateTime.Now.AddSeconds(Constants.AUTOJOB_FAIL_COOLDOWN_SECONDS);
             AppLogger.Debug($"⚙ Job 施加失败: {p.ProcessName}（已在其他 Job 或权限不足），{Constants.AUTOJOB_FAIL_COOLDOWN_SECONDS}s 内不重试");
         }
@@ -185,7 +186,7 @@ public static int AutoLimitedCount { get { lock (_jobLock) return _jobProtectedP
         }
     }
 
-    /// <summary>★ 3.6.8: 刚切到后台的进程给它 5 分钟缓冲，避免“临时切后台就被限速/崩”</summary>
+    /// <summary>刚切到后台的进程给它 5 分钟缓冲，避免“临时切后台就被限速/崩”</summary>
     private static bool WasRecentlyForeground(int pid)
     {
         lock (_fgLock)
@@ -205,7 +206,7 @@ public static int AutoLimitedCount { get { lock (_jobLock) return _jobProtectedP
         {
             var dead = _jobProtectedPids.Where(pid => !NativeApi.IsPidAliveCached(pid)).ToList();
             foreach (var pid in dead) _jobProtectedPids.Remove(pid);
-            // ★ 3.6.8: 连续计数表也要清理，避免 PID 复用后继承旧 streak
+            // 连续计数表也要清理，避免 PID 复用后继承旧 streak
             lock (_hogLock)
             {
                 var gone = _hogStreak.Keys.Where(pid => !NativeApi.IsPidAliveCached(pid)).ToList();
@@ -215,7 +216,7 @@ public static int AutoLimitedCount { get { lock (_jobLock) return _jobProtectedP
     }
     public static bool IsJobProtected(int pid)
     { lock (_jobLock) return _jobProtectedPids.Contains(pid); }
-    /// <summary>★ 3.6.8 修复: 负载回落时批量解除自动施加的 Job 限制
+    /// <summary>负载回落时批量解除自动施加的 Job 限制
     ///（原实现只增不减，被限进程会一直带着 CPU/内存帽运行到退出）</summary>
     private static void ReleaseAllAutoLimits()
     {
@@ -239,7 +240,7 @@ public static int AutoLimitedCount { get { lock (_jobLock) return _jobProtectedP
         lock (_jobLock) _jobProtectedPids.Remove(pid);
     }
 
-    /// <summary>★ 本轮新增: 一键还原时批量解除所有自动限速（含内部跟踪集合）</summary>
+    /// <summary>一键还原时批量解除所有自动限速（含内部跟踪集合）</summary>
     public static void ReleaseAllLimits() => ReleaseAllAutoLimits();
     public static string GetStats()
         => $"⚙ AutoJob: {_totalApplied} 次限制, {_jobProtectedPids.Count} 个受保护";

@@ -1,10 +1,11 @@
 // ============================================================
-// PC Booster v3.6.8
+// PC Booster v3.9.8
+// SPDX-License-Identifier: GPL-3.0-or-later
 // Infrastructure/Common/SafeTimer.cs
 // 容错定时器（回调异常不炸线程池；周期内不重入）
 // 本轮修复：
-//   1) 一次休眠会被多个定时器各判一次时间跳变 → 唤醒事件做 10 秒去重
-//   2) Dispose 等回调最多 500ms，5 个定时器串行让退出卡 2 秒 → 收到 50ms
+// 1) 一次休眠会被多个定时器各判一次时间跳变 → 唤醒事件做 10 秒去重
+// 2) Dispose 等回调最多 500ms，5 个定时器串行让退出卡 2 秒 → 收到 50ms
 // ============================================================
 using System;
 using System.Threading;
@@ -29,7 +30,7 @@ namespace PCBooster.Infrastructure.Common
         private long _lastTick = Environment.TickCount64;
         private int _consecutiveFailures;
 
-        // ★ 本轮新增: 静态去重戳 —— 多个定时器同时判时间跳变时只发一次唤醒事件
+        // 静态去重戳 —— 多个定时器同时判时间跳变时只发一次唤醒事件
         private static long _lastWakePublished;
 
         public string Name => _name;
@@ -153,7 +154,7 @@ namespace PCBooster.Infrastructure.Common
             if (_isDisposed) return;
             _isRunning = false;
             try { _timer?.Change(-1, -1); }
-            catch (ObjectDisposedException) { }
+            catch (System.Exception ex) { PCBooster.Infrastructure.Common.AppLogger.Debug("忽略异常: " + ex.GetType().Name + ": " + ex.Message); }
         }
 
         public void Dispose()
@@ -165,10 +166,10 @@ namespace PCBooster.Infrastructure.Common
             {
                 using var wait = new ManualResetEvent(false);
                 _timer?.Dispose(wait);
-                // ★ 修复: 500ms → 50ms（退出时不让 5 个定时器串行拖 2 秒）
+                // 500ms → 50ms（退出时不让 5 个定时器串行拖 2 秒）
                 wait.WaitOne(50);
             }
-            catch { }
+            catch (System.Exception ex) { PCBooster.Infrastructure.Common.AppLogger.Debug("忽略异常: " + ex.GetType().Name + ": " + ex.Message); }
             finally
             {
                 _timer = null;

@@ -2,6 +2,31 @@
 
 格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，版本号遵循语义化版本。
 
+## [3.9.8] - 2026-10-23
+
+本轮为**生产化整理**，不改变调度行为的语义，目标是可运行、可维护、可追责。
+
+### 工程化
+- **版本统一到 3.9.8**：Constants.VERSION、PCBooster.csproj（含 FileVersion / Product / Company / Copyright）、全部 65 个源文件头、窗口与托盘元数据
+- **全部源文件加 SPDX 标识**：SPDX-License-Identifier: GPL-3.0-or-later
+- **注释规范化**：移除 316 处开发轮次标记（★ 3.6.8、★ R17 等），只保留“为什么这么做”的解释；修复清理过程留下的 15 处残渣
+- **行尾统一 LF**，新增 .editorconfig（缩进、大括号、using 顺序、var 使用等）
+- **csproj 生产化**：Deterministic=true、TreatWarningsAsErrors=true、补齐程序集元数据、排除 	ests/ 参与主项目编译
+
+### 可靠性
+- **零空 catch**：58 处 catch {} 全部补上上下文日志（日志子系统自身的 4 处改为显式注释，避免递归）
+- **新增生产门禁** scripts/gate.ps1：构建（警告即错误）→ 单元测试 → 空 catch 计数 → 分层审计基线，CI 已接入
+
+### 测试
+- 新增 	ests/PCBooster.Tests（xUnit，59 项，禁止并行以适配静态状态）：
+  - ProcessMatcher 分类判据（系统/显卡/存储链路、编译工具短名不误判、反作弊、浏览器、办公）
+  - CpuTopologyEx 掩码不变量（游戏与后台互斥、并集恒定、同环开关不扩大核数）
+  - WorkloadGuard 三类豁免窗口与 Reset 语义
+  - 场景去抖（交替闪烁不产生连续切换事件）
+  - 关键常量不变式（心跳、防抖、保护窗口）
+
+### 隐私
+- 保持**零网络请求**：不包含任何遥测、上报、更新检查；日志只写本地 %AppData%\PCBooster\logs
 ## [3.6.9] - 2026-10-22
 
 本版核心目标：**消除"游戏中途卡住/黑屏"这一类事故**，并把日常办公/编译场景纳入保护。

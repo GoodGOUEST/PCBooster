@@ -1,5 +1,6 @@
 // ============================================================
-// PC Booster v3.6.8
+// PC Booster v3.9.8
+// SPDX-License-Identifier: GPL-3.0-or-later
 // Infrastructure/Common/Resilience.cs
 // 并发容错（合并 LockGuard/RetryHelper/ExceptionHelper）
 // ============================================================
@@ -41,7 +42,7 @@ namespace PCBooster.Infrastructure.Common
         public static void Release(ref int flag)
             => Volatile.Write(ref flag, 0);
 
-        // ═══════════ 模块故障上报（★ 3.6.8）═══════════
+        // ═══════════ 模块故障上报（）═══════════
         /// <summary>
         /// 基建层故障通道：Execution 只能依赖 Infrastructure，
         /// 不能反向引用 Core.ModuleHealthMonitor；由 Core 在启动时订阅本事件。
@@ -50,7 +51,7 @@ namespace PCBooster.Infrastructure.Common
 
         public static void ReportModuleFault(string module)
         {
-            try { ModuleFault?.Invoke(module); } catch { }
+            try { ModuleFault?.Invoke(module); } catch (System.Exception ex) { PCBooster.Infrastructure.Common.AppLogger.Debug("忽略异常: " + ex.GetType().Name + ": " + ex.Message); }
         }
     }
 }

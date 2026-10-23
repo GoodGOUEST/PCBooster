@@ -1,9 +1,8 @@
 // ============================================================
-// PC Booster v3.6.8
+// PC Booster v3.9.8
+// SPDX-License-Identifier: GPL-3.0-or-later
 // Program.cs
 // 入口（单实例 + 64位断言 + 三道异常防线 + 初始化顺序）
-// 修复: R2 防线 / P4 顺序 / Q2 权限 / 64位单一目标
-// 修订: CS0103 — TaskScheduler 全限定（System.Threading.Tasks）
 // ============================================================
 using System.Threading;
 using System.Windows.Forms;
@@ -20,10 +19,10 @@ namespace PCBooster
     internal static class Program
     {
         private static Mutex _mutex;
-        /// <summary>★ Q2修复: 权限探测（转发至 AppEnvironment，下层不再反向依赖 Program）</summary>
+        /// <summary>Q2修复: 权限探测（转发至 AppEnvironment，下层不再反向依赖 Program）</summary>
         public static bool HasAdminPrivileges => AppEnvironment.IsElevated;
 
-        /// <summary>★ 本轮新增: 以管理员身份重启（设置页“以管理员重启”按钮调用）。
+        /// <summary>以管理员身份重启（设置页“以管理员重启”按钮调用）。
         /// 先释放单实例互斥锁，否则新进程会以为“已在运行”而直接退出。</summary>
         public static bool RestartElevated()
         {
@@ -40,8 +39,8 @@ namespace PCBooster
                     Verb = "runas",
                     WorkingDirectory = System.IO.Path.GetDirectoryName(exe) ?? Environment.CurrentDirectory
                 };
-                try { _mutex?.ReleaseMutex(); } catch { }
-                try { _mutex?.Dispose(); } catch { }
+                try { _mutex?.ReleaseMutex(); } catch (System.Exception ex) { PCBooster.Infrastructure.Common.AppLogger.Debug("忽略异常: " + ex.GetType().Name + ": " + ex.Message); }
+                try { _mutex?.Dispose(); } catch (System.Exception ex) { PCBooster.Infrastructure.Common.AppLogger.Debug("忽略异常: " + ex.GetType().Name + ": " + ex.Message); }
                 _mutex = null;
                 System.Diagnostics.Process.Start(psi);
                 return true;
@@ -55,21 +54,21 @@ namespace PCBooster
         [STAThread]
         static void Main()
         {
-            // ★ UI 重写: 必须在任何窗口创建前声明 DPI 模式（配合 app.manifest），
-            //   否则高 DPI 下整窗被系统位图拉伸，会出现模糊与重影。
+            // UI 重写: 必须在任何窗口创建前声明 DPI 模式（配合 app.manifest），
+            // 否则高 DPI 下整窗被系统位图拉伸，会出现模糊与重影。
             Application.SetHighDpiMode(HighDpiMode.SystemAware);
             // ① 单实例
             _mutex = new Mutex(true, Constants.MUTEX_NAME, out bool createdNew);
             if (!createdNew)
             {
-                // ★ 本轮修复: 第二次双击原来只弹“已在运行”，看不到窗口；
-                //   现在直接唤醒已运行实例（托盘隐藏时也能拉回来）。
+                // 第二次双击原来只弹“已在运行”，看不到窗口；
+                // 现在直接唤醒已运行实例（托盘隐藏时也能拉回来）。
                 if (!SignalExistingInstance())
                     MessageBox.Show("PC Booster 已在运行中（窗口可能在托盘里）。", "提示",
                         MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
-            // ② 64位断言（v3.6.5）
+            // ② 64位断言（v3.9.8）
             if (!Environment.Is64BitProcess)
             {
                 MessageBox.Show("PC Booster 仅支持 64 位操作系统/进程。", "不支持",
@@ -78,7 +77,7 @@ namespace PCBooster
             }
             try
             {
-                // ③ ★ R2修复: 三道异常防线
+                // ③ 三道异常防线
                 Application.SetUnhandledExceptionMode(UnhandledExceptionMode.CatchException);
                 Application.ThreadException += (s, e) =>
                     AppLogger.Error($"💥 UI线程异常: {e.Exception}");
@@ -86,15 +85,15 @@ namespace PCBooster
                 {
                     try
                     {
-                        // ★ 3.6.8: 崩溃日志写 %AppData%（exe 可能位于 Program Files，不可写）
+                        // 崩溃日志写 %AppData%（exe 可能位于 Program Files，不可写）
                         System.IO.Directory.CreateDirectory(AppPaths.LogDir);
                         System.IO.File.AppendAllText(
                             System.IO.Path.Combine(AppPaths.LogDir, "crash.log"),
                             $"[{DateTime.Now}] {e.ExceptionObject}\n");
                     }
-                    catch { }
+                    catch (System.Exception ex) { PCBooster.Infrastructure.Common.AppLogger.Debug("忽略异常: " + ex.GetType().Name + ": " + ex.Message); }
                 };
-                // ★ CS0103修复: 全限定 TaskScheduler
+                // CS0103修复: 全限定 TaskScheduler
                 System.Threading.Tasks.TaskScheduler.UnobservedTaskException += (s, e) =>
                 {
                     AppLogger.Error($"💥 异步未观察异常: {e.Exception}");
@@ -103,16 +102,16 @@ namespace PCBooster
                 // ④ 日志最先
                 AppLogger.Initialize();
                 AppLogger.Info($"🚀 PC Booster v{Constants.VERSION} 启动中...");
-                // ★ 3.6.8: 打通基建层故障通道（Execution 报故障，Core 记健康）
+                // 打通基建层故障通道（Execution 报故障，Core 记健康）
                 ModuleHealthMonitor.EnableInfrastructureReporting();
                 // ⑤ 配置
                 AppConfig.Load();
-                // ★ 本轮新增: 开机自启自愈（换目录 / 重装后旧任务指向旧 exe，用户以为会自启）
+                // 开机自启自愈（换目录 / 重装后旧任务指向旧 exe，用户以为会自启）
                 StartupHelper.EnsureLaunchAtStartup();
-                // ⑥ ★ Q2修复: 权限探测（状态归 Infrastructure.AppEnvironment 持有）
+                // ⑥ Q2修复: 权限探测（状态归 Infrastructure.AppEnvironment 持有）
                 if (!AppEnvironment.Detect())
                     AppLogger.Warning("⚠️ 非管理员运行: Job/内存锁定已全局降级");
-                // ⑦ ★ P4修复: 初始化顺序（规则引擎先于智能引擎）
+                // ⑦ P4修复: 初始化顺序（规则引擎先于智能引擎）
                 ProcessRuleEngine.Initialize();
                 IntelligenceEngine.Initialize();
                 // ⑧ 执行器与基础设施
@@ -122,15 +121,15 @@ namespace PCBooster
                 CacheAwareScheduler.Initialize();
                 // ⑨ 缓存预热（异步）
                 _ = CacheManager.Warmup();
-                // ★ 3.6.8: 后台扫描 Steam 游戏库（识别游戏 exe，24h 缓存）
+                // 后台扫描 Steam 游戏库（识别游戏 exe，24h 缓存）
                 GameCatalog.StartScan();
                 // ⑩ 调度器（内部单点安装前台钩子，L1）
                 SchedulerCoordinator.Initialize();
                 // ⑪ UI
                 Application.EnableVisualStyles();
                 Application.SetCompatibleTextRenderingDefault(false);
-                // ★ 本轮新增: 崩溃兜底 —— 程序挂了也要把电源方案 / Job / 亲和性还原，
-                //   而不是让“高性能方案 + 限速”留在用户机器上。
+                // 崩溃兜底 —— 程序挂了也要把电源方案 / Job / 亲和性还原，
+                // 而不是让“高性能方案 + 限速”留在用户机器上。
                 Application.SetUnhandledExceptionMode(UnhandledExceptionMode.CatchException);
                 Application.ThreadException += (s, e) =>
                 {
@@ -145,9 +144,9 @@ namespace PCBooster
                         AppLogger.Error("未处理异常，先还原所有优化: " + e.ExceptionObject);
                         Core.BoosterActions.RestoreAll();
                     }
-                    catch { }
+                    catch (System.Exception ex) { PCBooster.Infrastructure.Common.AppLogger.Debug("忽略异常: " + ex.GetType().Name + ": " + ex.Message); }
                 };
-                // ★ UI 不直接引用 Program：提权重启由宿主注入
+                // UI 不直接引用 Program：提权重启由宿主注入
                 UI.AppServices.RestartElevated = RestartElevated;
                 var mainForm = new MainForm();
                 StartActivationListener(mainForm.RestoreFromAnotherInstance);
@@ -172,7 +171,7 @@ namespace PCBooster
                 SchedulerCoordinator.Shutdown();
                 IntelligenceEngine.Shutdown();
                 CacheAwareScheduler.Shutdown();
-                // ★ 3.6.8 修复: 退出全量还原（原来退出后优先级/亲和性/电源方案仍处于被改状态）
+                // 退出全量还原（原来退出后优先级/亲和性/电源方案仍处于被改状态）
                 try
                 {
                     Execution.Jobs.JobObjectApi.ReleaseAll();
@@ -231,7 +230,7 @@ namespace PCBooster
                             if (!_activateEvent.WaitOne(2000)) continue;
                             onActivate?.Invoke();
                         }
-                        catch { }
+                        catch (System.Exception ex) { PCBooster.Infrastructure.Common.AppLogger.Debug("忽略异常: " + ex.GetType().Name + ": " + ex.Message); }
                     }
                 })
                 {

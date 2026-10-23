@@ -1,9 +1,10 @@
 // ============================================================
-// PC Booster v3.6.8
+// PC Booster v3.9.8
+// SPDX-License-Identifier: GPL-3.0-or-later
 // UI/AppServices.cs
 // UI 与宿主（Program）之间的单向桥
 // 说明: 页面不直接引用 Program / MainForm，避免 UI↔Program 循环依赖；
-//       Program 在启动时注入“提权重启”实现，页面只发请求，主窗体负责执行与收尾。
+// Program 在启动时注入“提权重启”实现，页面只发请求，主窗体负责执行与收尾。
 // ============================================================
 using System;
 

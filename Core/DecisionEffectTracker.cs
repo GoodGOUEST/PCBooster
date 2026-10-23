@@ -1,5 +1,6 @@
 // ============================================================
-// PC Booster v3.6.8
+// PC Booster v3.9.8
+// SPDX-License-Identifier: GPL-3.0-or-later
 // Core/DecisionEffectTracker.cs
 // 决策效果跟踪（负载变化重置，防历史污染）
 // ============================================================
@@ -36,7 +37,7 @@ namespace PCBooster.Core
             }
         }
 
-        /// <summary>★ 3.6.8: 不再清空（保留空实现会误导后续调用）——请使用 DecayAll</summary>
+        /// <summary>不再清空（保留空实现会误导后续调用）——请使用 DecayAll</summary>
         public static void DecayAll(double factor = 0.5)
         {
             lock (_lock)

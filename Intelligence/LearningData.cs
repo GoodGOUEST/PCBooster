@@ -1,5 +1,6 @@
 // ============================================================
-// PC Booster v3.6.8
+// PC Booster v3.9.8
+// SPDX-License-Identifier: GPL-3.0-or-later
 // Intelligence/LearningData.cs
 // 统一持久化数据结构（修复 C1 类型定义 / C5 全 public / S2 DTO）
 // ============================================================
@@ -22,7 +23,7 @@ namespace PCBooster.Intelligence
         public bool CanPreload { get; set; } = false;
         public int PreloadPriority { get; set; } = 0;
         public int JobCpuLimit { get; set; } = -1;
-        /// <summary>★ 3.6.8: 默认 -1 = 不施加提交帽。
+        /// <summary>默认 -1 = 不施加提交帽。
         /// Job 的提交内存上限会让“已超限的进程”后续分配失败 → 浏览器/大型软件直接崩溃，
         /// 因此该能力只允许显式规则开启，不能作为类别的默认值。</summary>
         public int JobMemoryLimitMB { get; set; } = -1;
@@ -30,7 +31,7 @@ namespace PCBooster.Intelligence
         public bool BoostPriority { get; set; } = false;
         public bool CoreIsolation { get; set; } = false;
         public bool LockFrequency { get; set; } = false;
-        /// <summary>★ 3.6.8: 原名为 EnableLargePages，实际作用是“工作集下限锁定”
+        /// <summary>原名为 EnableLargePages，实际作用是“工作集下限锁定”
         ///（大页内存必须由目标进程自己申请，第三方无法代劳）</summary>
         public bool EnableWorkingSetLock { get; set; } = false;
         public bool CacheAware { get; set; } = false;
@@ -40,7 +41,7 @@ namespace PCBooster.Intelligence
     public class PeriodicPattern
     {
         public string ProcessName { get; set; } = "";
-        /// <summary>★ 3.6.8: -1 = 任意星期（原默认 0 等同于“周日”，语义错误）</summary>
+        /// <summary>-1 = 任意星期（原默认 0 等同于“周日”，语义错误）</summary>
         public int DayOfWeek { get; set; } = -1;
         public int Hour { get; set; }
         public int Occurrences { get; set; }
@@ -53,7 +54,7 @@ namespace PCBooster.Intelligence
     public class ProcessDataDto
     {
         public string Name { get; set; } = "";
-        // ★ 3.6.8 性能: 持久化时降采样（每 6 个取 1），仍保留统计特征，重启后无需预热
+        // 持久化时降采样（每 6 个取 1），仍保留统计特征，重启后无需预热
         public double[] CpuSamples { get; set; } = Array.Empty<double>();
         public long[] WorkingSetSamples { get; set; } = Array.Empty<long>();
         public int ForegroundCount { get; set; }
@@ -61,7 +62,7 @@ namespace PCBooster.Intelligence
         public int TotalLaunches { get; set; }
         public double TotalRunMinutes { get; set; }
         public int[] HourlyLaunches { get; set; } = new int[96];
-        /// <summary>★ 3.6.8: 使用维度（启动 + 前台切换），预测主信号</summary>
+        /// <summary>使用维度（启动 + 前台切换），预测主信号</summary>
         public int[] HourlyUsage { get; set; } = new int[96];
         public int[] WeeklyUsage { get; set; } = new int[7];
         public DateTime LastForegroundAt { get; set; } = DateTime.MinValue;

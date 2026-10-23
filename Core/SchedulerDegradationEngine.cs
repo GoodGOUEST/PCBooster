@@ -1,8 +1,8 @@
 // ============================================================
-// PC Booster v3.6.8
+// PC Booster v3.9.8
+// SPDX-License-Identifier: GPL-3.0-or-later
 // Core/SchedulerDegradationEngine.cs
 // 降级评估引擎
-// 3.6.7: 0.2/0.5/0.3 具名化（DEGRADE_*）
 // ============================================================
 using PCBooster.Infrastructure.Common;
 namespace PCBooster.Core

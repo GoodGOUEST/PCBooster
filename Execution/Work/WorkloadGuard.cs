@@ -1,14 +1,15 @@
 // ============================================================
-// PC Booster v3.6.9
+// PC Booster v3.9.8
+// SPDX-License-Identifier: GPL-3.0-or-later
 // Execution/Work/WorkloadGuard.cs
-// R17 日常模式保护（17.1 办公 / 17.2 浏览器 / 17.3 编译）
-//   · 编译：工具链进程存在期间 + 退出后 30s 尾巴，免 Job 限速、免工作集修剪
-//   · 办公：Office/WPS 前台期间（含切走后的 5 分钟窗口）全家免修剪、前台提 AboveNormal
-//   · 浏览器：只有“安静超过 5 分钟”才允许修剪其子进程，
-//             否则会砍掉正在后台播放音视频 / 跑 Web 应用的标签页
+// 日常模式保护（17.1 办公 / 17.2 浏览器 / 17.3 编译）
+// · 编译：工具链进程存在期间 + 退出后 30s 尾巴，免 Job 限速、免工作集修剪
+// · 办公：Office/WPS 前台期间（含切走后的 5 分钟窗口）全家免修剪、前台提 AboveNormal
+// · 浏览器：只有“安静超过 5 分钟”才允许修剪其子进程，
+// 否则会砍掉正在后台播放音视频 / 跑 Web 应用的标签页
 // 本类只做判定，不改任何系统状态（优先级提升在 ForegroundWatcher 回调节点完成）。
-// ★ 分层：放在 Execution 层，因为它服务的是 Execution 的两个执行器
-//   （AutoJobManager 限速、MemoryReclaimer 修剪）；Core 可以向下依赖 Execution。
+// 分层：放在 Execution 层，因为它服务的是 Execution 的两个执行器
+// （AutoJobManager 限速、MemoryReclaimer 修剪）；Core 可以向下依赖 Execution。
 // ============================================================
 using PCBooster.Infrastructure.Common;
 using PCBooster.Infrastructure.Native;
@@ -63,10 +64,10 @@ public static class WorkloadGuard
         }
         Prune(now);
     }
-    /// <summary>★ R17.3: 编译是否仍在进行（含退出后 WORKGUARD_BUILD_TAIL_SECONDS 尾巴）</summary>
+    /// <summary>编译是否仍在进行（含退出后 WORKGUARD_BUILD_TAIL_SECONDS 尾巴）</summary>
     public static bool IsBuilding(DateTime now)
         => (now - _lastBuildAt).TotalSeconds <= Constants.WORKGUARD_BUILD_TAIL_SECONDS;
-    /// <summary>★ R17.2/R17.3: 该进程是否禁止修剪工作集</summary>
+    /// <summary>该进程是否禁止修剪工作集</summary>
     public static bool IsTrimExempt(int pid, string name)
     {
         if (string.IsNullOrEmpty(name)) return false;
@@ -81,7 +82,7 @@ public static class WorkloadGuard
             (now - _officeFgAt).TotalMinutes < Constants.WORKGUARD_OFFICE_PROTECT_MINUTES) return true;
         return false;
     }
-    /// <summary>★ R17.3: 该进程是否禁止施加 Job CPU/内存限制</summary>
+    /// <summary>该进程是否禁止施加 Job CPU/内存限制</summary>
     public static bool IsJobExempt(int pid, string name)
     {
         if (string.IsNullOrEmpty(name)) return false;
@@ -90,7 +91,7 @@ public static class WorkloadGuard
             (DateTime.Now - _officeFgAt).TotalMinutes < Constants.WORKGUARD_OFFICE_PROTECT_MINUTES) return true;
         return false;
     }
-    /// <summary>★ R17.1: 前台办公程序需要提优先级（保存/重算不排在后台队列后面）</summary>
+    /// <summary>前台办公程序需要提优先级（保存/重算不排在后台队列后面）</summary>
     public static bool ShouldBoostForeground(string name)
         => !string.IsNullOrEmpty(name) && ProcessMatcher.IsOffice(name);
     /// <summary>当前保护状态（进程页展示，也用于日志）</summary>

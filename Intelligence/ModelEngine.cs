@@ -1,5 +1,6 @@
 // ============================================================
-// PC Booster v3.6.8
+// PC Booster v3.9.8
+// SPDX-License-Identifier: GPL-3.0-or-later
 // Intelligence/ModelEngine.cs
 // ②根治: 策略表 Interactive/Unknown 内存帽 -1（提交帽只给确证后台类）
 // + 四级分类漏斗 + 4参活体重载
@@ -12,7 +13,7 @@ public class ModelEngine
 {
 private readonly Dictionary<string, Dictionary<string, double>> _ngram1 = new();
 private readonly List<PeriodicPattern> _patterns = new();
-// ★ 3.6.8: 按进程的模式索引（预测热路径检索用）
+// 按进程的模式索引（预测热路径检索用）
 private readonly Dictionary<string, List<PeriodicPattern>> _patternIndex = new();
 private readonly object _lock = new();
     private static readonly Dictionary<ProcessClass, Strategy> _strategyMap = new()
@@ -24,13 +25,13 @@ private readonly object _lock = new();
         [ProcessClass.HeavyMemory] = new Strategy
         { ProtectionSeconds = 120, CanReclaim = true, CanPreload = true, PreloadPriority = 2,
           JobCpuLimit = 60, JobMemoryLimitMB = -1 },
-        // ★ ②根治: 交互类不施加提交帽
+        // ②根治: 交互类不施加提交帽
         [ProcessClass.Interactive] = new Strategy
         { ProtectionSeconds = 60, CanReclaim = true, CanPreload = true, PreloadPriority = 1,
           JobCpuLimit = 50, JobMemoryLimitMB = -1 },
         // 后台类: 只做 CPU 限速，绝不加提交帽
-        // ★ 3.6.8 修复: 原 JobMemoryLimitMB=512 会把多窗口浏览器/大型软件
-        //   的后续内存分配直接判失败（表现为“切后台一会儿就被杀”）。
+        // 原 JobMemoryLimitMB=512 会把多窗口浏览器/大型软件
+        // 的后续内存分配直接判失败（表现为“切后台一会儿就被杀”）。
         [ProcessClass.Background] = new Strategy
         { ProtectionSeconds = 0, CanReclaim = true, CanPreload = false,
           JobCpuLimit = 30, JobMemoryLimitMB = -1 },
@@ -40,7 +41,7 @@ private readonly object _lock = new();
         [ProcessClass.System] = new Strategy
         { ProtectionSeconds = 0, CanReclaim = false, CanPreload = false,
           JobCpuLimit = -1, JobMemoryLimitMB = -1 },
-        // ★ ②根治: 未知类不施加提交帽（未确证不惩罚）
+        // ②根治: 未知类不施加提交帽（未确证不惩罚）
         [ProcessClass.Unknown] = new Strategy
         { ProtectionSeconds = 30, CanReclaim = true, CanPreload = false,
           JobCpuLimit = 50, JobMemoryLimitMB = -1 }
@@ -55,8 +56,8 @@ private readonly object _lock = new();
         string scene = collector.GetCurrentScene();
         var recentSeq = collector.GetRecentSequence();
         var procs = collector.GetAllProcesses();
-        // ★ 3.6.8: 去掉每次调用的模式列表/n-gram 深拷贝（O(P+E) GC 压力），
-        //   改为锁内直读；模式检索走按进程的索引，不再 O(N×P) 线性扫描。
+        // 去掉每次调用的模式列表/n-gram 深拷贝（O(P+E) GC 压力），
+        // 改为锁内直读；模式检索走按进程的索引，不再 O(N×P) 线性扫描。
         lock (_lock)
         {
             Dictionary<string, double> trans = null;
@@ -74,12 +75,12 @@ private readonly object _lock = new();
                 int usageTotal = Math.Max(1, data.HourlyUsage.Sum());
                 score += Math.Clamp((double)data.HourlyUsage[timeSlot] / usageTotal, 0, 1)
                     * Constants.WEIGHT_HOURLY;
-                // ★ 3.6.8 修复: 周维度正式参与打分（原 DayOfWeek 字段只写不读）
+                // 周维度正式参与打分（原 DayOfWeek 字段只写不读）
                 score += GetDayShare(data, now.DayOfWeek) * Constants.WEIGHT_WEEKDAY;
-                // ★ 3.6.8 修复: 前台使用占比 + 最近使用——贴近“切窗口”习惯（原模型只看启动）
+                // 前台使用占比 + 最近使用——贴近“切窗口”习惯（原模型只看启动）
                 score += GetForegroundScore(data) * Constants.WEIGHT_FOREGROUND;
                 score += GetPeriodicScore(kv.Key, now.Hour, (int)now.DayOfWeek) * Constants.WEIGHT_PERIODIC;
-                // ★ 3.6.8: 序列与马尔可夫本就是同一指标，合并计算（原两个方法结果相同）
+                // 序列与马尔可夫本就是同一指标，合并计算（原两个方法结果相同）
                 score += GetTransitionScore(trans, transTotal, kv.Key) * transWeight;
                 score += (scene == Constants.SCENE_GAMING && ProcessMatcher.IsGame(kv.Key)
                     ? Constants.SCENE_GAME_BOOST : 0) * Constants.WEIGHT_SCENE;
@@ -92,7 +93,7 @@ private readonly object _lock = new();
         return predictions.OrderByDescending(x => x.Value).Take(topN)
             .Select(x => (x.Key, x.Value)).ToList();
     }
-    /// <summary>★ 3.6.8: 按进程索引检索周期模式（原为每个进程线性扫全表）</summary>
+    /// <summary>按进程索引检索周期模式（原为每个进程线性扫全表）</summary>
     private double GetPeriodicScore(string process, int hour, int dayOfWeek)
     {
         if (!_patternIndex.TryGetValue(process, out var list) || list == null || list.Count == 0) return 0;
@@ -106,7 +107,7 @@ private readonly object _lock = new();
         }
         return best;
     }
-    /// <summary>★ 3.6.8: 该进程在指定星期的使用占比（0~1）</summary>
+    /// <summary>该进程在指定星期的使用占比（0~1）</summary>
     private static double GetDayShare(DataCollector.ProcessData data, DayOfWeek day)
     {
         var weekly = data?.WeeklyUsage;
@@ -115,7 +116,7 @@ private readonly object _lock = new();
         return total > 0 ? (double)weekly[(int)day] / total : 0;
     }
 
-    /// <summary>★ 3.6.8: 前台使用得分（占比放大 + 最近使用加成）</summary>
+    /// <summary>前台使用得分（占比放大 + 最近使用加成）</summary>
     private static double GetForegroundScore(DataCollector.ProcessData data)
     {
         if (data == null) return 0;
@@ -126,7 +127,7 @@ private readonly object _lock = new();
             score = Math.Min(1.0, score + 0.3);
         return score;
     }
-    /// <summary>★ 3.6.8: 转移概率（0~1）；n-gram 存计数，只在打分时归一化</summary>
+    /// <summary>转移概率（0~1）；n-gram 存计数，只在打分时归一化</summary>
     private static double GetTransitionScore(Dictionary<string, double> trans, double total, string target)
     {
         if (trans == null || total <= 0) return 0;
@@ -143,10 +144,10 @@ private readonly object _lock = new();
         if (data != null && !string.IsNullOrEmpty(data.UserOverride) &&
             Enum.TryParse<ProcessClass>(data.UserOverride, out var uc)) return uc;
 
-        // ★ 本轮修复: 游戏是“用户意图”（手动标记 / 游戏库已识别），不能被统计模型改判。
-        //   旧顺序先跑 ClassifyByStats：游戏在加载、菜单、低帧阶段 CPU 采样可能偏低，
-        //   会被判成 Interactive/Background → CoreIsolation / LockFrequency 全部不生效，
-        //   表现就是“场景明明是游戏，但频率不锁、隔离不生效”。
+        // 游戏是“用户意图”（手动标记 / 游戏库已识别），不能被统计模型改判。
+        // 旧顺序先跑 ClassifyByStats：游戏在加载、菜单、低帧阶段 CPU 采样可能偏低，
+        // 会被判成 Interactive/Background → CoreIsolation / LockFrequency 全部不生效，
+        // 表现就是“场景明明是游戏，但频率不锁、隔离不生效”。
         if (ProcessMatcher.IsSystemProcess(processName)) return ProcessClass.System;
         if (ProcessMatcher.IsGame(processName)) return ProcessClass.HeavyCompute;
 
@@ -175,7 +176,7 @@ private readonly object _lock = new();
     }
     private static ProcessClass ClassifyByStats(DataCollector.ProcessData data)
     {
-        // ★ 3.6.8 性能: 单遍统计
+        // 单遍统计
         //（原实现：Window.ToList() + Select().ToList() + Average/Max/StdDev 各自内部再拷贝 = 6 个列表）
         var wsList = data.WorkingSetWindow.ToList();
         if (wsList.Count == 0) return ProcessClass.Unknown;
@@ -204,7 +205,7 @@ private readonly object _lock = new();
     public Strategy GetStrategy(ProcessClass cls)
         => _strategyMap.TryGetValue(cls, out var s) ? s : _strategyMap[ProcessClass.Unknown];
 
-    /// <summary>★ 3.6.8 修复: 实时增量学习二元序列
+    /// <summary>实时增量学习二元序列
     ///（原实现只在每 5 分钟闲时学最后一条转换，SEQUENCE+MARKOV 共 0.33 权重长期接近 0）</summary>
     public void LearnSequence(DataCollector collector)
     {
@@ -217,7 +218,7 @@ private readonly object _lock = new();
         {
             if (!_ngram1.TryGetValue(key, out var next))
             { next = new Dictionary<string, double>(); _ngram1[key] = next; }
-            // ★ 3.6.8: 只累计计数（原实现每次写入都归一化，等价于丢掉历史权重）
+            // 只累计计数（原实现每次写入都归一化，等价于丢掉历史权重）
             next[target] = next.GetValueOrDefault(target, 0) + 1;
         }
     }
@@ -265,7 +266,7 @@ private readonly object _lock = new();
                         var np = new PeriodicPattern
                         {
                             ProcessName = kv.Key,
-                            DayOfWeek = -1,   // ★ 3.6.8: 周维度由 WeeklyUsage 单独打分
+                            DayOfWeek = -1,   // 周维度由 WeeklyUsage 单独打分
                             Hour = hour,
                             Occurrences = count,
                             Confidence = conf
@@ -276,7 +277,7 @@ private readonly object _lock = new();
                 }
             }
             // 3) 清理已消失进程的模式 + 上限保护（原来无界增长）
-            // ★ 审计修正: procs 为空（采集关闭/尚未采集）时不能清理，否则会把已学模式全删
+            // procs 为空（采集关闭/尚未采集）时不能清理，否则会把已学模式全删
             if (_patterns.Count > 0 && procs.Count > 0)
             {
                 _patterns.RemoveAll(p => !procs.ContainsKey(p.ProcessName));
@@ -287,7 +288,7 @@ private readonly object _lock = new();
             RebuildPatternIndexLocked();
         }
     }
-    /// <summary>★ 3.6.8: 重建按进程的模式索引（调用方已持锁）</summary>
+    /// <summary>重建按进程的模式索引（调用方已持锁）</summary>
     private void RebuildPatternIndexLocked()
     {
         _patternIndex.Clear();

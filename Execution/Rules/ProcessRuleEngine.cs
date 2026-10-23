@@ -1,8 +1,8 @@
 // ============================================================
-// PC Booster v3.6.8
+// PC Booster v3.9.8
+// SPDX-License-Identifier: GPL-3.0-or-later
 // Execution/Rules/ProcessRuleEngine.cs
 // 规则引擎（合并 RuleApplier + 亲和性走合并器）
-// 修复: N3 亲和性合并器 / K3 userRuleMask ulong 转换
 // ============================================================
 
 using PCBooster.Infrastructure.Common;
@@ -18,7 +18,7 @@ namespace PCBooster.Execution.Rules
         private static readonly List<ProcessRule> _rules = new();
         private static readonly object _lock = new();
         private static int _version;
-        // ★ 3.6.8: 已应用过的 (PID|规则) 去重，支持“新进程出现时再应用规则”而不重复刷统计
+        // 已应用过的 (PID|规则) 去重，支持“新进程出现时再应用规则”而不重复刷统计
         private static readonly HashSet<string> _appliedKeys = new();
         private static PersistenceManager<List<ProcessRule>> _persistence;
 
@@ -30,7 +30,7 @@ namespace PCBooster.Execution.Rules
             {
                 lock (_lock) _rules.AddRange(loaded);
                 RebuildIndex();
-                // ★ 3.6.8: 历史规则迁移——旧版本"新建"产生的 "*" 空动作规则会把所有进程优先级重置为 Normal
+                // 历史规则迁移——旧版本"新建"产生的 "*" 空动作规则会把所有进程优先级重置为 Normal
                 int disabled = 0;
                 lock (_lock)
                     foreach (var r in _rules)
@@ -50,7 +50,7 @@ namespace PCBooster.Execution.Rules
         }
 
         public static int GetVersion() => _version;
-        /// <summary>★ 3.6.8: 是否存在启用中的规则（供调度器决定是否每轮检查新进程）</summary>
+        /// <summary>是否存在启用中的规则（供调度器决定是否每轮检查新进程）</summary>
         public static bool HasActiveRules { get { lock (_lock) return _rules.Any(r => r.IsEnabled); } }
         public static void RebuildIndex() { lock (_lock) { _version++; _appliedKeys.Clear(); } }
 
@@ -110,7 +110,7 @@ namespace PCBooster.Execution.Rules
             if (rules.Count == 0) return 0;
 
             int applied = 0;
-            // ★ 3.6.8: 去重表按 PID 清理已退出项（防 PID 复用后新进程被误判“已应用”）
+            // 去重表按 PID 清理已退出项（防 PID 复用后新进程被误判“已应用”）
             if (_appliedKeys.Count > 256)
             {
                 var livePids = new HashSet<int>(procs.Where(p => p.Id > 0).Select(p => p.Id));
@@ -126,7 +126,7 @@ namespace PCBooster.Execution.Rules
             {
                 if (string.IsNullOrEmpty(p.ProcessName)) continue;
                 if (ProcessMatcher.IsSystemProcess(p.ProcessName)) continue;
-                if (ProcessMatcher.IsProtected(p.ProcessName)) continue;   // ★ 3.6.8 红线: 规则也不碰反作弊
+                if (ProcessMatcher.IsProtected(p.ProcessName)) continue;   // 红线: 规则也不碰反作弊
 
                 var rule = rules
                     .Where(r => !r.IsNoOp)
@@ -135,7 +135,7 @@ namespace PCBooster.Execution.Rules
                     .FirstOrDefault(r => r.CheckCondition(cpuUsage, memoryAvailable));
 
                 if (rule == null) continue;
-                // ★ 3.6.8: 同一 (PID, 规则) 只应用一次；新启动的进程会在下一轮被补上
+                // 同一 (PID, 规则) 只应用一次；新启动的进程会在下一轮被补上
                 var key = p.Id + "|" + rule.Id;
                 lock (_lock) if (_appliedKeys.Contains(key)) continue;
                 if (ApplyRuleToProcess(p, rule))
@@ -171,8 +171,8 @@ namespace PCBooster.Execution.Rules
                 applied |= ProcessSafeHelper.SetPriority(p.Id, priority);
             }
 
-            // ★ N3修复: 亲和性走 AffinityResolver（用户规则最高优先级）
-            // ★ K3修复: long → ulong 显式转换（匹配新签名）
+            // N3修复: 亲和性走 AffinityResolver（用户规则最高优先级）
+            // K3修复: long → ulong 显式转换（匹配新签名）
             if (rule.TargetAffinityMask != -1)
             {
                 applied |= AffinityResolver.ApplyAffinity(
@@ -180,7 +180,7 @@ namespace PCBooster.Execution.Rules
                     userRuleMask: (ulong)rule.TargetAffinityMask);
             }
 
-            // ★ 3.6.8 修复: Action="preload" 真正可执行（原字段被完全忽略，学习规则因此名存实亡）
+            // Action="preload" 真正可执行（原字段被完全忽略，学习规则因此名存实亡）
             if (action == "preload")
             {
                 _ = PCBooster.Execution.Preload.UnifiedPreloader.PreloadForProcess(p.Id, p.ProcessName, 1.0);

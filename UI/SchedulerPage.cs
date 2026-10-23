@@ -1,5 +1,6 @@
 // ============================================================
-// PC Booster v3.6.8
+// PC Booster v3.9.8
+// SPDX-License-Identifier: GPL-3.0-or-later
 // UI/SchedulerPage.cs
 // 进程页（UI 重写）：工作集前 100 进程 + 右键分类/优先级/游戏标记
 // ============================================================
@@ -37,7 +38,7 @@ namespace PCBooster.UI
             var refresh = UiToolkit.CreateButton("立即刷新");
             refresh.Click += (s, e) => _ = RefreshListAsync();
 
-            // ★ R17: 日常负载保护状态（编译/办公/浏览器）——直接展示为何某些进程不被处理
+            // 日常负载保护状态（编译/办公/浏览器）——直接展示为何某些进程不被处理
             _guard = new Label
             {
                 Text = "— 无特殊保护",

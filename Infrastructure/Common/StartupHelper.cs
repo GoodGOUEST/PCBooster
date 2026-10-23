@@ -1,5 +1,7 @@
 // ============================================================
-// PC Booster v3.6.8 修订
+// PC Booster v3.9.8
+// SPDX-License-Identifier: GPL-3.0-or-later
+// PC Booster v3.9.8 修订
 // Infrastructure/Common/StartupHelper.cs
 // 开机自启管理（任务计划提权方案 + 注册表降级方案）
 // 机制: schtasks ONLOGON + HIGHEST 实现静默提权自启
@@ -29,7 +31,7 @@ namespace PCBooster.Infrastructure.Common
 
             try
             {
-                // ★ 方案 A: 任务计划程序 (schtasks)
+                // 方案 A: 任务计划程序 (schtasks)
                 // /sc ONLOGON: 用户登录时触发
                 // /rl HIGHEST: 以最高权限(管理员)运行，实现静默提权
                 // /f: 强制覆盖已存在的任务
@@ -50,7 +52,7 @@ namespace PCBooster.Infrastructure.Common
                 int code = p?.ExitCode ?? -1;
                 if (enable && code != 0)
                 {
-                    // ★ 3.6.8: 原实现不看退出码，任务创建失败也打印“已开启”
+                    // 原实现不看退出码，任务创建失败也打印“已开启”
                     AppLogger.Warning($"⚠️ 任务计划创建失败(code={code})，降级为注册表自启");
                     FallbackRunKey(true);
                     return;
@@ -67,7 +69,7 @@ namespace PCBooster.Infrastructure.Common
             }
         }
 
-        /// <summary>★ 本轮新增: 自启是否指向“当前这个 exe”（任务计划或 Run 键任一匹配）</summary>
+        /// <summary>自启是否指向“当前这个 exe”（任务计划或 Run 键任一匹配）</summary>
         public static bool IsLaunchAtStartup()
         {
             string exe = ResolveExePath();
@@ -75,7 +77,7 @@ namespace PCBooster.Infrastructure.Common
             return TaskMatches(exe) || RegistryMatches(exe);
         }
 
-        /// <summary>★ 本轮新增: 自启自愈。换了目录 / 重装 / 任务被删时，
+        /// <summary>自启自愈。换了目录 / 重装 / 任务被删时，
         /// 配置仍是“开启”，用户以为会自启，实际不会。这里只补 HKCU Run 键（不弹 UAC）。</summary>
         public static void EnsureLaunchAtStartup()
         {
@@ -88,7 +90,7 @@ namespace PCBooster.Infrastructure.Common
                     FallbackRunKey(true);
                     AppLogger.Info("🔧 开机自启已自愈（原任务/键失效或指向旧路径）");
                 }
-                catch { }
+                catch (System.Exception ex) { PCBooster.Infrastructure.Common.AppLogger.Debug("忽略异常: " + ex.GetType().Name + ": " + ex.Message); }
             });
         }
 
@@ -152,8 +154,8 @@ namespace PCBooster.Infrastructure.Common
 
         /// <summary>
         /// 解析自身 exe 路径。
-        /// ★ 单文件发布: Assembly.Location 恒为空字符串（IL3000），
-        ///   必须用 Environment.ProcessPath / AppContext.BaseDirectory。
+        /// 单文件发布: Assembly.Location 恒为空字符串（IL3000），
+        /// 必须用 Environment.ProcessPath / AppContext.BaseDirectory。
         /// </summary>
         private static string ResolveExePath()
         {

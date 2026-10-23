@@ -1,10 +1,10 @@
 // ============================================================
-// PC Booster v3.6.8
+// PC Booster v3.9.8
+// SPDX-License-Identifier: GPL-3.0-or-later
 // Infrastructure/Common/ProcessSafeHelper.cs
 // 进程安全操作（自动 Dispose + 异常捕获）
-// 64位: SetAffinity 采用 ulong 掩码（v3.6.5）
-// 修订: CS0029 — SetAffinity/SetPriority 改语句 lambda
-//       （无 return → 唯一匹配 Action<Process> 重载 → 返回 bool）
+// 64位: SetAffinity 采用 ulong 掩码（v3.9.8）
+// （无 return → 唯一匹配 Action<Process> 重载 → 返回 bool）
 // ============================================================
 using System.Diagnostics;
 namespace PCBooster.Infrastructure.Common
@@ -32,7 +32,7 @@ namespace PCBooster.Infrastructure.Common
         public static long GetWorkingSet(int pid)
             => WithProcess(pid, p => p.WorkingSet64, 0L);
 
-        /// <summary>★ 3.6.8: 读取当前亲和性（0 表示读取失败）</summary>
+        /// <summary>读取当前亲和性（0 表示读取失败）</summary>
         public static ulong GetAffinity(int pid)
             => WithProcess(pid, p => unchecked((ulong)(long)p.ProcessorAffinity), 0UL);
         public static bool IsAlive(int pid)
@@ -42,10 +42,10 @@ namespace PCBooster.Infrastructure.Common
         }
 
         // ══════════════════════════════════════════════════════════
-        //  ★ R17 游戏卡死防护：有“可见顶层窗口”的进程 = 用户正在用的程序，
-        //    一律不施加 Job CPU/内存限制、不视为可回收候选。
-        //    实测日志里 Games / PlatformProcess 这类未识别客户端被限速过——
-        //    一旦打到游戏主进程上，表现就是画面卡住/黑屏。
+        // 游戏卡死防护：有“可见顶层窗口”的进程 = 用户正在用的程序，
+        // 一律不施加 Job CPU/内存限制、不视为可回收候选。
+        // 实测日志里 Games / PlatformProcess 这类未识别客户端被限速过——
+        // 一旦打到游戏主进程上，表现就是画面卡住/黑屏。
         // ══════════════════════════════════════════════════════════
         private delegate bool EnumWindowsProc(IntPtr hWnd, IntPtr lParam);
         [System.Runtime.InteropServices.DllImport("user32.dll")]
@@ -90,11 +90,11 @@ namespace PCBooster.Infrastructure.Common
                                 if (GetWindowThreadProcessId(h, out uint owner) != 0 && owner != 0)
                                     found.Add((int)owner);
                             }
-                            catch { }
+                            catch (System.Exception ex) { PCBooster.Infrastructure.Common.AppLogger.Debug("忽略异常: " + ex.GetType().Name + ": " + ex.Message); }
                             return true;
                         }, IntPtr.Zero);
                     }
-                    catch { }
+                    catch (System.Exception ex) { PCBooster.Infrastructure.Common.AppLogger.Debug("忽略异常: " + ex.GetType().Name + ": " + ex.Message); }
                     _windowPids = found;
                     _windowPidsAt = DateTime.Now;
                 }
@@ -102,19 +102,19 @@ namespace PCBooster.Infrastructure.Common
             }
             return set.Contains(pid);
         }
-        /// <summary>★ 3.6.8: 反作弊/保护进程一律不写（优先级/亲和性）</summary>
+        /// <summary>反作弊/保护进程一律不写（优先级/亲和性）</summary>
         private static bool IsProtectedPid(int pid)
         {
             var name = GetProcessName(pid);
             return !string.IsNullOrEmpty(name) && ProcessMatcher.IsProtected(name);
         }
-        /// <summary>★ 64位: ulong 亲和性掩码（原生寄存器宽，无符号溢出）</summary>
+        /// <summary>64位: ulong 亲和性掩码（原生寄存器宽，无符号溢出）</summary>
         public static bool SetAffinity(int pid, ulong mask)
         {
             if (IsProtectedPid(pid)) return false;
             return WithProcess(pid, p =>
             {
-                // ★ 3.6.8: 首次修改前记录原值 + 进程身份（退出还原用）
+                // 首次修改前记录原值 + 进程身份（退出还原用）
                 try
                 {
                     lock (_restoreLock)
@@ -123,7 +123,7 @@ namespace PCBooster.Infrastructure.Common
                         if (!o.HasAffinity) { o.Affinity = p.ProcessorAffinity; o.HasAffinity = true; }
                     }
                 }
-                catch { }
+                catch (System.Exception ex) { PCBooster.Infrastructure.Common.AppLogger.Debug("忽略异常: " + ex.GetType().Name + ": " + ex.Message); }
                 p.ProcessorAffinity = unchecked((IntPtr)(long)mask);
             });
         }
@@ -156,13 +156,13 @@ namespace PCBooster.Infrastructure.Common
         {
             if (_origins.TryGetValue(pid, out var o)) return o;
             o = new Origin();
-            try { o.Name = p.ProcessName; } catch { }
+            try { o.Name = p.ProcessName; } catch (System.Exception ex) { PCBooster.Infrastructure.Common.AppLogger.Debug("忽略异常: " + ex.GetType().Name + ": " + ex.Message); }
             try { o.StartTicks = p.StartTime.Ticks; } catch { o.StartTicks = 0; }
             _origins[pid] = o;
             return o;
         }
         /// <summary>还原所有被修改过的进程优先级与亲和性，返回实际处理条数
-        /// ★ 3.6.8: 先校验进程身份（名字/启动时间），避免 PID 被系统复用后改错进程</summary>
+        /// 先校验进程身份（名字/启动时间），避免 PID 被系统复用后改错进程</summary>
         public static int RestoreAll()
         {
             int restored = 0;
@@ -183,13 +183,13 @@ namespace PCBooster.Infrastructure.Common
                     if (o.Name.Length > 0)
                     {
                         string cur = "";
-                        try { cur = p.ProcessName; } catch { }
+                        try { cur = p.ProcessName; } catch (System.Exception ex) { PCBooster.Infrastructure.Common.AppLogger.Debug("忽略异常: " + ex.GetType().Name + ": " + ex.Message); }
                         if (!string.Equals(cur, o.Name, StringComparison.OrdinalIgnoreCase)) return;
                     }
                     if (o.StartTicks > 0)
                     {
                         long t = 0;
-                        try { t = p.StartTime.Ticks; } catch { }
+                        try { t = p.StartTime.Ticks; } catch (System.Exception ex) { PCBooster.Infrastructure.Common.AppLogger.Debug("忽略异常: " + ex.GetType().Name + ": " + ex.Message); }
                         if (t != o.StartTicks) return;
                     }
                     if (o.HasPriority) p.PriorityClass = o.Priority;

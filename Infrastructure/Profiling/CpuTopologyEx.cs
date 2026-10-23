@@ -1,12 +1,12 @@
 // ============================================================
-// PC Booster v3.6.9
+// PC Booster v3.9.8
+// SPDX-License-Identifier: GPL-3.0-or-later
 // Infrastructure/Profiling/CpuTopologyEx.cs
-// R17: L3 域（AMD CCD / Intel ring）+ 混合架构（P/E 核）感知的掩码计算
-//   借鉴自 FlexCore 的「按 CCD / 性能核选择核心」思路，但只做掩码决策，
-//   不引入全局调度接管（避免与其它调度工具互抢）。
-//   · 本机 Xeon E5 v3：16C/32T，L3 分成 2 个 20MB 环域 —— 把游戏放在同一个环内，
-//     可避免跨环 L3 访问与内存延迟惩罚。
-//   · 混合架构（Intel 12 代+）：游戏核优先效率等级 0（P 核），后台核优先 E 核。
+// 借鉴自 FlexCore 的「按 CCD / 性能核选择核心」思路，但只做掩码决策，
+// 不引入全局调度接管（避免与其它调度工具互抢）。
+// · 本机 Xeon E5 v3：16C/32T，L3 分成 2 个 20MB 环域 —— 把游戏放在同一个环内，
+// 可避免跨环 L3 访问与内存延迟惩罚。
+// · 混合架构（Intel 12 代+）：游戏核优先效率等级 0（P 核），后台核优先 E 核。
 // ============================================================
 using System.Runtime.InteropServices;
 using PCBooster.Infrastructure.Common;
@@ -146,7 +146,7 @@ public static class CpuTopologyEx
                 if ((_cores[i].LogicalMask & _domains[d].Mask) != 0) { _cores[i].L3Domain = d; break; }
     }
     /// <summary>游戏/重载掩码：优先同一 L3 域（CCD/环），混合架构优先 P 核
-    /// ★ 单域但核数多的平台（如至强双环）可传 singleRingOnly=true，把游戏核限制在半个核数内</summary>
+    /// 单域但核数多的平台（如至强双环）可传 singleRingOnly=true，把游戏核限制在半个核数内</summary>
     public static ulong GetGameMask(int gameCores, bool singleRingOnly = false)
     {
         lock (_lock)
@@ -155,7 +155,7 @@ public static class CpuTopologyEx
             // 留至少 1 个物理核给后台，否则后台掩码会变成 0（隔离反而失效）
             int cap = Math.Max(1, _cores.Count - 1);
             int need = Math.Clamp(gameCores, 1, cap);
-            // ★ 可选：单 L3 域平台按“半个核数”当一簇（用户显式开启才生效）
+            // 可选：单 L3 域平台按“半个核数”当一簇（用户显式开启才生效）
             if (singleRingOnly && _domains.Count <= 1 && _cores.Count >= 8)
                 need = Math.Min(need, Math.Max(1, _cores.Count / 2));
             var pool = HasHybrid

@@ -1,7 +1,7 @@
 // ============================================================
-// PC Booster v3.6.8
+// PC Booster v3.9.8
+// SPDX-License-Identifier: GPL-3.0-or-later
 // Infrastructure/Common/ModuleRegistry.cs
-// 修复: D8 Names 尾随空格（健康键一致性）
 // ============================================================
 namespace PCBooster.Infrastructure.Common
 {
@@ -51,7 +51,7 @@ public const string NativeApi = "NativeApi";
         Decisions.Preload => Names.UnifiedPreloader,
         Decisions.Priority => Names.NativeApi,
         Decisions.InstructionSet => Names.NativeApi,
-        Decisions.Auxiliary => Names.AutoJobManager,   // ★ 3.6.8: AutoJob 真正接入健康/休眠门控
+        Decisions.Auxiliary => Names.AutoJobManager,   // AutoJob 真正接入健康/休眠门控
         _ => Names.SchedulerCoordinator
     };
 }

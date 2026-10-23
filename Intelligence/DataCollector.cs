@@ -1,13 +1,13 @@
 // ============================================================
-// PC Booster v3.6.8
+// PC Booster v3.9.8
+// SPDX-License-Identifier: GPL-3.0-or-later
 // Intelligence/DataCollector.cs
-// 修复: D5 TotalRunMinutes 校准(RUN_MINUTES_PER_TICK) / D9 会议复用 IsMeetingTool /
-//       96槽/序列/净化/活动增量具名化
+// 96槽/序列/净化/活动增量具名化
 // 3.6.8 走查:
-//   ① 场景识别与学习采集解耦（learn=false 时仍更新场景，但不落任何统计）；
-//   ② 场景以“前台进程”为准（游戏在场优先），不再被后台常驻 IDE 劫持；
-//   ③ 所有键统一 Sanitize（大写进程名也能查到档案/写反馈）；
-//   ④ 删除只写不读的 HourlyActivity / WeeklyLaunches / ForegroundSwitches。
+// ① 场景识别与学习采集解耦（learn=false 时仍更新场景，但不落任何统计）；
+// ② 场景以“前台进程”为准（游戏在场优先），不再被后台常驻 IDE 劫持；
+// ③ 所有键统一 Sanitize（大写进程名也能查到档案/写反馈）；
+// ④ 删除只写不读的 HourlyActivity / WeeklyLaunches / ForegroundSwitches。
 // ============================================================
 using System.Text;
 using PCBooster.Infrastructure.Common;
@@ -23,11 +23,11 @@ namespace PCBooster.Intelligence
         private readonly List<string> _recentSequence = new();
         private string _currentScene = Constants.SCENE_GENERAL;
         private string _lastScene = Constants.SCENE_GENERAL;
-        // ★ R17: 场景去抖状态（候选场景 + 连续命中次数）
+        // 场景去抖状态（候选场景 + 连续命中次数）
         private string _pendingScene = "";
         private int _pendingStreak;
         private long _collectCount;
-        private int _lastForegroundPid;   // ★ 3.6.8: 前台切换检测（用户日常最频繁的行为）
+        private int _lastForegroundPid;   // 前台切换检测（用户日常最频繁的行为）
 
         public class ProcessData
         {
@@ -37,7 +37,7 @@ namespace PCBooster.Intelligence
             public int ForegroundCount, TotalSamples, TotalLaunches;
             public double TotalRunMinutes;
             public int[] HourlyLaunches = new int[Constants.TIME_SLOTS_PER_DAY];
-            // ★ 3.6.8: “使用”维度（启动 + 前台切换），预测主信号
+            // “使用”维度（启动 + 前台切换），预测主信号
             public int[] HourlyUsage = new int[Constants.TIME_SLOTS_PER_DAY];
             public int[] WeeklyUsage = new int[7];
             public DateTime LastForegroundAt = DateTime.MinValue;
@@ -46,8 +46,8 @@ namespace PCBooster.Intelligence
         }
 
         /// <param name="learn">是否记录行为统计（受“数据采集”开关控制）。
-        /// ★ 3.6.8: 场景/前台跟踪必须始终运行——否则默认关闭采集时，
-        ///   游戏模式、电源锁定、核心隔离全部不会触发（实际“没作用”的根因）。</param>
+        /// 场景/前台跟踪必须始终运行——否则默认关闭采集时，
+        /// 游戏模式、电源锁定、核心隔离全部不会触发（实际“没作用”的根因）。</param>
         public void Collect(NativeApi.ProcessSnapshot[] procs, List<string> justLaunched, int fgPid,
             bool learn = true)
         {
@@ -82,7 +82,7 @@ namespace PCBooster.Intelligence
                     if (p.Id == fgPid) { data.ForegroundCount++; data.LastForegroundAt = now; }
                     data.TotalSamples++;
                     data.LastSeen = now;
-                    data.TotalRunMinutes += Constants.RUN_MINUTES_PER_TICK; // ★ D5
+                    data.TotalRunMinutes += Constants.RUN_MINUTES_PER_TICK; // 
                 }
 
                 if (learn && justLaunched != null)
@@ -96,7 +96,7 @@ namespace PCBooster.Intelligence
                         {
                             d.TotalLaunches++;
                             d.HourlyLaunches[slot]++;
-                            d.HourlyUsage[slot]++;                    // ★ 使用维度
+                            d.HourlyUsage[slot]++;                    // 使用维度
                             d.WeeklyUsage[(int)now.DayOfWeek]++;
                         }
                         _recentSequence.Add(name);
@@ -104,13 +104,13 @@ namespace PCBooster.Intelligence
                     }
                 }
 
-                // ★ 3.6.8 走查: 前台名只算一次，供“学习记账”与“场景判定”共用
+                // 前台名只算一次，供“学习记账”与“场景判定”共用
                 string fgName = null;
                 if (fgPid > 0)
                     foreach (var sp in procs)
                         if (sp.Id == fgPid) { fgName = Sanitize(sp.ProcessName); break; }
 
-                // ★ 3.6.8 修复: 记录“前台切换”——原来只学“启动”，而用户日常主要是切窗口
+                // 记录“前台切换”——原来只学“启动”，而用户日常主要是切窗口
                 if (learn && fgPid > 0 && fgPid != _lastForegroundPid)
                 {
                     _lastForegroundPid = fgPid;
@@ -128,7 +128,7 @@ namespace PCBooster.Intelligence
                 }
 
                 string rawScene = DetectScene(liveNames, fgName);
-                // ★ R17: 场景判定去抖（见 ConfirmScene）——抖动不再产生切换事件
+                // 场景判定去抖（见 ConfirmScene）——抖动不再产生切换事件
                 string confirmedScene = ConfirmScene(rawScene, out string previousScene);
                 if (confirmedScene != null)
                 {
@@ -149,7 +149,7 @@ namespace PCBooster.Intelligence
             return r.Length > Constants.SANITIZE_MAX_LENGTH ? r[..Constants.SANITIZE_MAX_LENGTH] : r;
         }
 
-        /// <summary>★ 3.6.8 性能: 降采样（保序，保留末位），用于压缩持久化的滑窗样本</summary>
+        /// <summary>降采样（保序，保留末位），用于压缩持久化的滑窗样本</summary>
         private static T[] Downsample<T>(List<T> src, int step)
         {
             if (src.Count == 0) return Array.Empty<T>();
@@ -160,7 +160,7 @@ namespace PCBooster.Intelligence
             return dst.ToArray();
         }
 
-        /// <summary>★ R17 场景去抖：全屏游戏切显示模式/加载/退出确认框时，前台进程会秒级闪烁，
+        /// <summary>场景去抖：全屏游戏切显示模式/加载/退出确认框时，前台进程会秒级闪烁，
         /// 原始判定在 gaming ↔ gaming-bg 之间来回翻（实测 10 秒翻了 5 次），每一次都会：
         /// 重置电源方案 + 扫核隔离 + 刷反馈噪声 + 刷 UI 日志。
         /// 所以非游戏场景转换要连续 SCENE_CONFIRM_SAMPLES 次一致才发布；
@@ -184,21 +184,21 @@ namespace PCBooster.Intelligence
             return raw;
         }
 
-        /// <summary>★ D9修复: 会议类复用匹配器（删除内联重复）
-        /// ★ 3.6.8 走查: 除游戏外，场景以前台进程为准；否则后台常驻的 IDE/Office
-        ///   会把场景永久劫持（用户明明在浏览网页，场景却一直是 development）</summary>
+        /// <summary>会议类复用匹配器（删除内联重复）
+        /// 除游戏外，场景以前台进程为准；否则后台常驻的 IDE/Office
+        /// 会把场景永久劫持（用户明明在浏览网页，场景却一直是 development）</summary>
         private string DetectScene(HashSet<string> names, string foregroundName)
         {
             names ??= new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             // ① 游戏在运行：只要它在前台就保持 gaming；切到桌面/浏览器时降为 gaming-bg，
-            //   ★ 本轮修复: 旧版一旦游戏启动就永远 gaming，最小化后依然锁频+高性能电源，
-            //   用户回桌面办公/看视频时机器持续发热、风扇响。
+            // 旧版一旦游戏启动就永远 gaming，最小化后依然锁频+高性能电源，
+            // 用户回桌面办公/看视频时机器持续发热、风扇响。
             if (names.Any(ProcessMatcher.IsGame))
             {
                 bool foregroundIsGame = !string.IsNullOrEmpty(foregroundName) && ProcessMatcher.IsGame(foregroundName);
                 return foregroundIsGame ? Constants.SCENE_GAMING : Constants.SCENE_GAMING_BACKGROUND;
             }
-            // ★ 本轮新增: 影音播放（前台是播放器）—— 只关核心停泊，不切高性能、不锁频
+            // 影音播放（前台是播放器）—— 只关核心停泊，不切高性能、不锁频
             if (!string.IsNullOrEmpty(foregroundName) && ProcessMatcher.IsVideoPlayer(foregroundName))
                 return Constants.SCENE_VIDEO;
             // ② 其余场景以前台为准
@@ -223,7 +223,7 @@ namespace PCBooster.Intelligence
 
         public void OnFeedback(string processName, bool hit)
         {
-            var key = Sanitize(processName);   // ★ 3.6.8 走查: 统一键（大写进程名也能命中）
+            var key = Sanitize(processName);   // 统一键（大写进程名也能命中）
             if (string.IsNullOrEmpty(key)) return;
             lock (_lock)
             {
@@ -239,7 +239,7 @@ namespace PCBooster.Intelligence
 
         public void OnRuleHit(string processName)
         {
-            var key = Sanitize(processName);   // ★ 3.6.8 走查: 统一键
+            var key = Sanitize(processName);   // 统一键
             if (string.IsNullOrEmpty(key)) return;
             lock (_lock)
                 if (_processes.TryGetValue(key, out var data)) data.TotalLaunches++;
@@ -248,7 +248,7 @@ namespace PCBooster.Intelligence
         public void SetUserOverride(string processName, string classification)
         {
             if (string.IsNullOrWhiteSpace(processName)) return;
-            // ★ 3.6.8: 统一规范化键（UI 传入的是原始大小写名称）
+            // 统一规范化键（UI 传入的是原始大小写名称）
             var key = Sanitize(processName);
             var cls = classification ?? "";
             lock (_lock)
@@ -265,8 +265,8 @@ namespace PCBooster.Intelligence
 
         public ProcessData GetProcess(string name)
         {
-            // ★ 3.6.8 走查: 统一键——原来是大小写敏感查字典，
-            //   WeChat / Code 这类大写进程名查不到档案，用户覆盖与统计全部失效。
+            // 统一键——原来是大小写敏感查字典，
+            // WeChat / Code 这类大写进程名查不到档案，用户覆盖与统计全部失效。
             var key = Sanitize(name);
             if (key.Length == 0) return null;
             lock (_lock) return _processes.TryGetValue(key, out var d) ? d : null;
@@ -283,7 +283,7 @@ namespace PCBooster.Intelligence
         public int GetProcessCount()
         { lock (_lock) return _processes.Count; }
 
-        /// <summary>★ 3.6.8: 有效采集时长（分钟）——用于冷启动判定与 UI 进度</summary>
+        /// <summary>有效采集时长（分钟）——用于冷启动判定与 UI 进度</summary>
         public int CollectedMinutes
         { get { lock (_lock) return (int)(_collectCount * Constants.FAST_HEARTBEAT_MS / 60000.0); } }
 
@@ -308,7 +308,7 @@ namespace PCBooster.Intelligence
                     data.Processes[kv.Key] = new ProcessDataDto
                     {
                         Name = kv.Value.Name,
-                        // ★ 3.6.8 性能: 降采样持久化（每 6 个取 1 → 60 点变 10 点）
+                        // 降采样持久化（每 6 个取 1 → 60 点变 10 点）
                         CpuSamples = Downsample(kv.Value.CpuWindow.ToList(), 6),
                         WorkingSetSamples = Downsample(kv.Value.WorkingSetWindow.ToList(), 6),
                         ForegroundCount = kv.Value.ForegroundCount,
@@ -337,7 +337,7 @@ namespace PCBooster.Intelligence
                 {
                     var dto = kv.Value;
                     if (dto == null) continue;
-                    // ★ 3.6.8 走查: 旧/手改 JSON 的键可能不是规范小写，载入时统一
+                    // 旧/手改 JSON 的键可能不是规范小写，载入时统一
                     var key = Sanitize(string.IsNullOrEmpty(dto.Name) ? kv.Key : dto.Name);
                     if (key.Length == 0) continue;
                     var proc = new ProcessData
@@ -361,7 +361,7 @@ namespace PCBooster.Intelligence
                 }
                 _currentScene = data.CurrentScene ?? Constants.SCENE_GENERAL;
                 _lastScene = _currentScene;
-                // ★ R17: 载入后清空去抖候选，避免旧候选直接生效
+                // 载入后清空去抖候选，避免旧候选直接生效
                 _pendingScene = "";
                 _pendingStreak = 0;
             }

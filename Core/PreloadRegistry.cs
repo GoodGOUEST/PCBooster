@@ -1,13 +1,13 @@
 // ============================================================
-// PC Booster v3.6.8
+// PC Booster v3.9.8
+// SPDX-License-Identifier: GPL-3.0-or-later
 // Core/PreloadRegistry.cs
 // 预加载 PID 注册表 —— 数据所有权归 Core 层
 // 3.6.7 修复:
-//   ① 切断 Core → UI 反向依赖（原 MainForm._preloadPids 三处静态调用）
-//   ② 存活判定移出锁外，锁内不再有 OpenProcess 之类系统调用
-//   ③ 快照内已出现的 PID 直接视为存活，省去重复探测
-// 3.6.8:
-//   ④ 预加载名单 10 秒缓存（原每 2 秒 Split/ToHashSet 一次）
+// ① 切断 Core → UI 反向依赖（原 MainForm._preloadPids 三处静态调用）
+// ② 存活判定移出锁外，锁内不再有 OpenProcess 之类系统调用
+// ③ 快照内已出现的 PID 直接视为存活，省去重复探测
+// ④ 预加载名单 10 秒缓存（原每 2 秒 Split/ToHashSet 一次）
 // ============================================================
 using System;
 using System.Collections.Generic;
@@ -23,7 +23,7 @@ namespace PCBooster.Core
         private static readonly List<int> _pids = new();
         private static readonly object _lock = new();
 
-        // ★ 3.6.8 性能: 配置里的预加载名单每 2 秒被 Sync 重新解析，改为 10 秒缓存
+        // 配置里的预加载名单每 2 秒被 Sync 重新解析，改为 10 秒缓存
         private static HashSet<string> _namesCache;
         private static DateTime _namesAt = DateTime.MinValue;
 
@@ -46,7 +46,7 @@ namespace PCBooster.Core
             var names = PreloadNames();
             if (names.Count == 0) return;
 
-            // ★ 锁外解析 PID（FindPidByName 命中快照字典，O(1)）
+            // 锁外解析 PID（FindPidByName 命中快照字典，O(1)）
             var resolved = new List<int>(names.Count);
             foreach (var name in names)
             {
@@ -79,7 +79,7 @@ namespace PCBooster.Core
             var aliveInSnapshot = new HashSet<int>(items.Count);
             foreach (var (pid, _) in items) aliveInSnapshot.Add(pid);
 
-            // ★ 关键: 存活判定全部在锁外完成（避免持锁做系统调用）
+            // 关键: 存活判定全部在锁外完成（避免持锁做系统调用）
             List<int> current;
             lock (_lock) current = new List<int>(_pids);
 

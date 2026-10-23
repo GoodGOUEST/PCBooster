@@ -1,0 +1,38 @@
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 4
+
+[*.{md,yml,yaml,json,mjs,ps1}]
+indent_size = 2
+
+[*.cs]
+# 命名空间与 using
+csharp_style_namespace_declarations = block_scoped:suggestion
+dotnet_sort_system_directives_first = true
+dotnet_separate_import_directive_groups = false
+
+# 大括号与换行
+csharp_new_line_before_open_brace = all
+csharp_new_line_before_else = true
+csharp_new_line_before_catch = true
+csharp_new_line_before_finally = true
+csharp_prefer_braces = true:suggestion
+
+# 语言习惯
+dotnet_style_predefined_type_for_locals_parameters_members = true:suggestion
+dotnet_style_qualification_for_field = false:suggestion
+csharp_style_var_for_built_in_types = false:suggestion
+csharp_style_var_when_type_is_apparent = true:suggestion
+csharp_style_expression_bodied_methods = when_on_single_line:suggestion
+
+# 不要求每个方法都有 XML 注释，但公共 API 建议有
+dotnet_diagnostic.CS1591.severity = none
+
+# 格式诊断（不阻塞构建，交给 IDE 提示）
+dotnet_diagnostic.IDE0055.severity = none

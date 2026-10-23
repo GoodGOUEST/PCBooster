@@ -1,5 +1,6 @@
 // ============================================================
-// PC Booster v3.6.8
+// PC Booster v3.9.8
+// SPDX-License-Identifier: GPL-3.0-or-later
 // Core/DecisionNecessityEvaluator.cs
 // 决策必要性分数（学习效果驱动）
 // ============================================================
@@ -26,7 +27,7 @@ namespace PCBooster.Core
             return score * DecisionEffectTracker.GetEffectiveness(decision) > Constants.NECESSITY_SKIP_THRESHOLD;
         }
 
-        /// <summary>★ 3.6.8: 定期把低分向 0.5 拉回。
+        /// <summary>定期把低分向 0.5 拉回。
         /// 原实现只会“越失败越低”，一旦越过阈值就再也不会执行，
         /// 而不再执行又永远不会产生新数据 → 永久停用（与阈值棘轮同类问题）。</summary>
         private static void RecoverIfNeededLocked()
